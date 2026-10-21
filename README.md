@@ -1,3 +1,5 @@
+<img width="3446" height="1267" alt="1824" src="https://github.com/user-attachments/assets/995e66e2-8a9d-413f-a585-632cc4a81ffb" />
+<img width="3495" height="1947" alt="4283" src="https://github.com/user-attachments/assets/d84583ef-f7c4-4894-bf90-1247f24f88f5" />
 # 🐉 ScyllaNizer
 
 **ScyllaNizer** is a sleek, powerful, and ultra-fast file organizer for Android. It scans any folder (including `Download` and root storage), categorizes files by extension, and safely moves them—with a full dry-run preview and instant undo.
