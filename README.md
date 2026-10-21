@@ -1,3 +1,4 @@
+<img width="3460" height="1953" alt="5595" src="https://github.com/user-attachments/assets/41db7dbb-ede3-4cb5-8a21-6a208dc00517" />
 
 <img width="3495" height="1947" alt="4283" src="https://github.com/user-attachments/assets/d84583ef-f7c4-4894-bf90-1247f24f88f5" />
 # 🐉 ScyllaNizer
