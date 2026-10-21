@@ -3,7 +3,7 @@
 <img width="3495" height="1947" alt="4283" src="https://github.com/user-attachments/assets/d84583ef-f7c4-4894-bf90-1247f24f88f5" />
 # 🐉 ScyllaNizer
 
-**ScyllaNizer** is a sleek, powerful, and ultra-fast file organizer for Android. It scans any folder (including `Download` and root storage), categorizes files by extension, and safely moves them accordingly.
+**ScyllaNizer** is a sleek, powerful, and ultra-fast file organizer for Android. It scans any folder (including `Download` and root storage), categorizes files by extension, and safely moves them around without ever overwriting your data.
 
 Built with **Kotlin** and **Jetpack Compose**, ScyllaNizer features a gorgeous "Glossy Black & Electric Cyan" UI that adapts perfectly to both phones and large tablets (like the 13" Idea Tab Pro).
 
@@ -41,4 +41,4 @@ ScyllaNizer bridges the gap:
 1. **No complex rules to set up** (unlike FilePipe). Just pick a folder and tap Scan.
 2. **100% Offline & Private** (no cloud AI reading your files).
 3. **The Wi‑Fi Drop feature** (no other organizer has a built-in local HTTP server to receive files from a PC).
-4. **Full Dry-Run Preview & Checkboxes** so you have absolute control over what gets moved or deleted before a single file touches the disk.
+4. **Full Dry-Run Preview** so you have absolute control over what gets moved before a single file touches the disk.
