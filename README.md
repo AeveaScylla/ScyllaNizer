@@ -3,7 +3,7 @@
 [![Get it on Komi Store](https://img.shields.io/badge/Komi%20Store-Download-blue?style=for-the-badge&logo=android)](https://github-store.org/app?repo=AeveaScylla/ScyllaNizer)
 [![Download APK](https://img.shields.io/badge/Download-Latest%20APK-brightgreen?style=for-the-badge&logo=github)](https://github.com/AeveaScylla/ScyllaNizer/releases/latest)
 
-**ScyllaNizer** is a sleek, powerful, and ultra-fast file organizer for Android. It scans any folder (including `Download` and root storage), categorizes files by extension, and safely moves them with a full dry-run preview and instant undo.
+**ScyllaNizer** is a sleek, powerful, and ultra-fast file organizer for Android. It scans any folder (including `Download` and root storage), categorizes files by extension, and safely moves them where they belong while preserving your structure.
 
 Built with **Kotlin** and **Jetpack Compose**, ScyllaNizer features a glossy black and electric cyan UI that adapts perfectly to both phones and tablets.
 
@@ -20,6 +20,21 @@ Built with **Kotlin** and **Jetpack Compose**, ScyllaNizer features a glossy bla
 - **System Lock:** Protect critical `Android/data` folders by default.
 - **Wi‑Fi Drop (HTTP Server):** Receive files from a PC over a local Wi‑Fi network.
 - **Adaptive UI:** Responsive two-column layout on tablets and a smooth single-column layout on phones.
+
+## 📸 Screenshots
+
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="Screenshot_20261025-170221.png" width="220" alt="Home screen" /></td>
+      <td><img src="Screenshot_20261025-170233.png" width="220" alt="Folder scan" /></td>
+    </tr>
+    <tr>
+      <td><img src="Screenshot_20261025-170249.png" width="220" alt="Sorting preview" /></td>
+      <td><img src="Screenshot_20261025-170305.png" width="220" alt="Cleanup options" /></td>
+    </tr>
+  </table>
+</div>
 
 ## 🛠️ Build & Install
 
