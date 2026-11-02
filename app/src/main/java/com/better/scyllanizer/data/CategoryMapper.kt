@@ -1,5 +1,7 @@
 package com.better.scyllanizer.data
 
+import androidx.compose.ui.graphics.Color
+
 object CategoryMapper {
     const val IMAGES = "Images"
     const val VIDEOS = "Videos"
@@ -32,4 +34,19 @@ object CategoryMapper {
     }
 
     fun categoryFor(extension: String): String = map[extension.lowercase()] ?: OTHERS
+
+    fun getCategoryColor(category: String): Color {
+        return when (category) {
+            IMAGES -> Color(0xFF06B6D4)     // Cyan
+            VIDEOS -> Color(0xFF8B5CF6)     // Purple
+            AUDIO -> Color(0xFF10B981)      // Green
+            DOCUMENTS -> Color(0xFFF59E0B)  // Amber
+            ARCHIVES -> Color(0xFFEC4899)   // Pink
+            APPS -> Color(0xFF3B82F6)       // Blue
+            FONTS -> Color(0xFFF97316)      // Orange
+            CODE -> Color(0xFF14B8A6)       // Teal
+            DESIGN -> Color(0xFFEF4444)     // Red
+            else -> Color(0xFF64748B)       // Slate
+        }
+    }
 }

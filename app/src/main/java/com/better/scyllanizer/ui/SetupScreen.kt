@@ -1,6 +1,7 @@
 package com.better.scyllanizer.ui
 
 import android.widget.Toast
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +12,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Computer
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -76,12 +82,6 @@ fun SetupScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text("ScyllaNizer", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }, 
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        },
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Box(
@@ -111,10 +111,20 @@ fun SetupScreen(
 
             if (isTablet) {
                 Row(
-                    modifier = Modifier.fillMaxSize().widthIn(max = 1200.dp).align(Alignment.TopCenter).padding(horizontal = 20.dp, vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .widthIn(max = 1200.dp)
+                        .align(Alignment.TopCenter)
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(
+                        modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Spacer(Modifier.height(4.dp))
+                        ScreenHeader()
                         PermissionOrFolder(state, onPickFolder = { showPicker = true })
                         
                         if (state.canUndo) {
@@ -134,7 +144,11 @@ fun SetupScreen(
                         })
                         CleanupCard(state, onToggle, onToggleShred)
                     }
-                    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(
+                        modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Spacer(Modifier.height(72.dp))
                         WifiDropCard(state, server, serverIp, onToggleServer = { isChecked ->
                             if (isChecked && state.rootPath != null) {
                                 serverIp = getLocalIpAddress()
@@ -147,7 +161,17 @@ fun SetupScreen(
                     }
                 }
             } else {
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Header flows naturally inside scroll content, eliminating freeze and dead space
+                    ScreenHeader()
+
                     PermissionOrFolder(state, onPickFolder = { showPicker = true })
                     
                     if (state.canUndo) {
@@ -187,6 +211,160 @@ fun SetupScreen(
             confirmText = "Select root folder",
             onDismiss = { showPicker = false },
             onSelect = { path -> showPicker = false; onFolderPicked(path) }
+        )
+    }
+}
+
+@Composable
+fun ScreenHeader() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "ScyllaNizer", 
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold, 
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.height(2.dp))
+        ScyllaHeaderGraphic()
+    }
+}
+
+@Composable
+fun ScyllaHeaderGraphic() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Smartphone,
+            contentDescription = "Phone",
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(20.dp)
+        )
+        
+        AnimatedArrowConnector(modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
+        
+        Icon(
+            imageVector = Icons.Outlined.Folder,
+            contentDescription = "Folders",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(28.dp)
+        )
+        
+        AnimatedArrowConnector(modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
+        
+        Icon(
+            imageVector = Icons.Outlined.Computer,
+            contentDescription = "PC",
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Composable
+fun AnimatedArrowConnector(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "arrow_animation")
+
+    val phase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 16.dp.value,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1000,
+                easing = LinearEasing
+            ),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "arrow_phase"
+    )
+
+    Canvas(modifier = modifier.height(28.dp)) {
+        val topY = 8.dp.toPx()
+        val bottomY = size.height - 8.dp.toPx()
+        val strokeWidth = 2.dp.toPx()
+        val arrowLength = 7.dp.toPx()
+        val arrowAngle = 4.dp.toPx()
+
+        val dashLength = 8.dp.toPx()
+        val gapLength = 8.dp.toPx()
+        val cycle = dashLength + gapLength
+        val phasePx = phase.dp.toPx()
+        val color = Color(0xFF06B6D4)
+
+        // TOP ARROW: dashes move to the right.
+        var x = -cycle
+        while (x < size.width + cycle) {
+            val startX = (x + phasePx).coerceAtLeast(0f)
+            val endX = (x + phasePx + dashLength).coerceAtMost(size.width)
+
+            if (startX < endX) {
+                drawLine(
+                    color = color,
+                    start = Offset(startX, topY),
+                    end = Offset(endX, topY),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round
+                )
+            }
+            x += cycle
+        }
+
+        // Fixed right-facing arrowhead.
+        drawLine(
+            color = color,
+            start = Offset(size.width - arrowLength, topY - arrowAngle),
+            end = Offset(size.width, topY),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = color,
+            start = Offset(size.width - arrowLength, topY + arrowAngle),
+            end = Offset(size.width, topY),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+
+        // BOTTOM ARROW: dashes move to the left.
+        x = -cycle
+        while (x < size.width + cycle) {
+            val startX = (x - phasePx).coerceAtLeast(0f)
+            val endX = (x - phasePx + dashLength).coerceAtMost(size.width)
+
+            if (startX < endX) {
+                drawLine(
+                    color = color,
+                    start = Offset(startX, bottomY),
+                    end = Offset(endX, bottomY),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round
+                )
+            }
+            x += cycle
+        }
+
+        // Fixed left-facing arrowhead.
+        drawLine(
+            color = color,
+            start = Offset(arrowLength, bottomY - arrowAngle),
+            end = Offset(0f, bottomY),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = color,
+            start = Offset(arrowLength, bottomY + arrowAngle),
+            end = Offset(0f, bottomY),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
         )
     }
 }
@@ -354,7 +532,7 @@ fun DonutChart(state: UiState) {
             var startAngle = -90f
             categorySizes.entries.forEachIndexed { index, entry ->
                 val sweepAngle = (entry.value / totalSize) * 360f
-                drawArc(color = colors[index % colors.size], startAngle = startAngle, sweepAngle = sweepAngle, useCenter = false, style = Stroke(width = 30f, cap = androidx.compose.ui.graphics.StrokeCap.Round), size = Size(size.width, size.height), topLeft = Offset(30f, 30f))
+                drawArc(color = colors[index % colors.size], startAngle = startAngle, sweepAngle = sweepAngle, useCenter = false, style = Stroke(width = 30f, cap = StrokeCap.Round), size = Size(size.width, size.height), topLeft = Offset(30f, 30f))
                 startAngle += sweepAngle
             }
         }

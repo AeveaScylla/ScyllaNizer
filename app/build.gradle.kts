@@ -11,8 +11,8 @@ android {
         applicationId = "com.better.scyllanizer"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "2.0"
+        versionCode = 3
+        versionName = "3.0"
     }
 
     buildTypes {
@@ -55,6 +55,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.nanohttpd:nanohttpd:2.3.1")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation(platform("androidx.compose:compose-bom:2024.04.01"))
     implementation("androidx.compose.ui:ui")
