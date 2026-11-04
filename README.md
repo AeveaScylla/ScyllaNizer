@@ -1,6 +1,8 @@
 # ScyllaNizer
 
-ScyllaNizer is an Android file organizer built with Kotlin and Jetpack Compose. Choose a folder, configure the organization options, review the proposed changes, and then apply them. The app also includes a file explorer.
+[![Get it on Komi Store](https://img.shields.io/badge/Get%20it%20on-Komi%20Store-3A5FCD?logo=android&logoColor=white)](https://komistore.app/app/AeveaScylla/ScyllaNizer)
+
+ScyllaNizer is an Android file organizer built with Kotlin and Jetpack Compose. Choose a folder, configure the organization options, review the proposed changes, and then apply them. The app also includes an explorer to browse files and manage them more easily.
 
 ## Screenshots
 
