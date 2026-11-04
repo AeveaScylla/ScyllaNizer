@@ -55,20 +55,21 @@ data class SortOptions(
     val recursive: Boolean = true,
     val skipHidden: Boolean = true,
     val dateSubfolders: Boolean = false,
-    val extSubfolders: Boolean = false,
+    val extSubfolders: Boolean = false, // All files
+    val docSubfolders: Boolean = false, // Specifically for Documents
     val excludedPaths: Set<String> = emptySet(),
     val shredFiles: Boolean = false,
     val deleteEmptyFolders: Boolean = false,
     val deleteZeroByteFiles: Boolean = false,
     val deleteDuplicates: Boolean = false,
-    val includeSystemFolders: Boolean = false // NEW
+    val includeSystemFolders: Boolean = false
 )
 
 enum class Step { SETUP, PREVIEW, RESULT }
 
 enum class OptionKey { 
-    RECURSIVE, SKIP_HIDDEN, DATE_SUBFOLDERS, EXT_SUBFOLDERS, 
-    DELETE_EMPTY, DELETE_ZERO, DELETE_DUPLICATES, INCLUDE_SYSTEM // NEW
+    RECURSIVE, SKIP_HIDDEN, DATE_SUBFOLDERS, EXT_SUBFOLDERS, DOC_SUBFOLDERS,
+    DELETE_EMPTY, DELETE_ZERO, DELETE_DUPLICATES, INCLUDE_SYSTEM 
 }
 
 data class UiState(
@@ -86,4 +87,5 @@ data class UiState(
     val canUndo: Boolean = false,
     val error: String? = null,
     val message: String? = null,
+    val updateInfo: com.better.scyllanizer.data.UpdateInfo? = null,
 )

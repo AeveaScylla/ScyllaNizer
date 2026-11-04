@@ -97,8 +97,8 @@ fun SetupScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .widthIn(max = 600.dp)
-                            .padding(horizontal = 20.dp, vertical = 16.dp)
-                            .height(54.dp),
+                            .padding(horizontal = 20.dp, vertical = 4.dp)
+                            .height(50.dp),
                     ) {
                         Text("Preview plan", style = MaterialTheme.typography.titleMedium)
                     }
@@ -115,7 +115,6 @@ fun SetupScreen(
                         .fillMaxSize()
                         .widthIn(max = 1200.dp)
                         .align(Alignment.TopCenter)
-                        .statusBarsPadding()
                         .padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
@@ -123,7 +122,6 @@ fun SetupScreen(
                         modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Spacer(Modifier.height(4.dp))
                         ScreenHeader()
                         PermissionOrFolder(state, onPickFolder = { showPicker = true })
                         
@@ -165,11 +163,9 @@ fun SetupScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .statusBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 4.dp),
+                        .padding(horizontal = 20.dp, vertical = 0.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header flows naturally inside scroll content, eliminating freeze and dead space
                     ScreenHeader()
 
                     PermissionOrFolder(state, onPickFolder = { showPicker = true })
@@ -220,16 +216,16 @@ fun ScreenHeader() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 0.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "ScyllaNizer", 
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold, 
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(8.dp))
         ScyllaHeaderGraphic()
     }
 }
@@ -271,101 +267,46 @@ fun ScyllaHeaderGraphic() {
 
 @Composable
 fun AnimatedArrowConnector(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "arrow_animation")
-
+    val infiniteTransition = rememberInfiniteTransition(label = "dash_anim")
     val phase by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 16.dp.value,
+        targetValue = 24f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1000,
-                easing = LinearEasing
-            ),
+            animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "arrow_phase"
+        label = "dash_phase"
     )
 
-    Canvas(modifier = modifier.height(28.dp)) {
-        val topY = 8.dp.toPx()
-        val bottomY = size.height - 8.dp.toPx()
+    Canvas(modifier = modifier.height(32.dp)) {
+        val topY = 10.dp.toPx()
+        val bottomY = size.height - 10.dp.toPx()
         val strokeWidth = 2.dp.toPx()
-        val arrowLength = 7.dp.toPx()
-        val arrowAngle = 4.dp.toPx()
-
-        val dashLength = 8.dp.toPx()
-        val gapLength = 8.dp.toPx()
-        val cycle = dashLength + gapLength
-        val phasePx = phase.dp.toPx()
+        val arrowLength = 8.dp.toPx()
+        val arrowAngle = 5.dp.toPx()
         val color = Color(0xFF06B6D4)
 
-        // TOP ARROW: dashes move to the right.
-        var x = -cycle
-        while (x < size.width + cycle) {
-            val startX = (x + phasePx).coerceAtLeast(0f)
-            val endX = (x + phasePx + dashLength).coerceAtMost(size.width)
-
-            if (startX < endX) {
-                drawLine(
-                    color = color,
-                    start = Offset(startX, topY),
-                    end = Offset(endX, topY),
-                    strokeWidth = strokeWidth,
-                    cap = StrokeCap.Round
-                )
-            }
-            x += cycle
-        }
-
-        // Fixed right-facing arrowhead.
         drawLine(
             color = color,
-            start = Offset(size.width - arrowLength, topY - arrowAngle),
-            end = Offset(size.width, topY),
+            start = Offset(0f, topY),
+            end = Offset(size.width, topY), 
             strokeWidth = strokeWidth,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), phase),
             cap = StrokeCap.Round
         )
+        drawLine(color, Offset(size.width - arrowLength, topY - arrowAngle), Offset(size.width, topY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
+        drawLine(color, Offset(size.width - arrowLength, topY + arrowAngle), Offset(size.width, topY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
+
         drawLine(
             color = color,
-            start = Offset(size.width - arrowLength, topY + arrowAngle),
-            end = Offset(size.width, topY),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-
-        // BOTTOM ARROW: dashes move to the left.
-        x = -cycle
-        while (x < size.width + cycle) {
-            val startX = (x - phasePx).coerceAtLeast(0f)
-            val endX = (x - phasePx + dashLength).coerceAtMost(size.width)
-
-            if (startX < endX) {
-                drawLine(
-                    color = color,
-                    start = Offset(startX, bottomY),
-                    end = Offset(endX, bottomY),
-                    strokeWidth = strokeWidth,
-                    cap = StrokeCap.Round
-                )
-            }
-            x += cycle
-        }
-
-        // Fixed left-facing arrowhead.
-        drawLine(
-            color = color,
-            start = Offset(arrowLength, bottomY - arrowAngle),
+            start = Offset(size.width, bottomY),
             end = Offset(0f, bottomY),
             strokeWidth = strokeWidth,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), -phase),
             cap = StrokeCap.Round
         )
-        drawLine(
-            color = color,
-            start = Offset(arrowLength, bottomY + arrowAngle),
-            end = Offset(0f, bottomY),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
+        drawLine(color, Offset(arrowLength, bottomY - arrowAngle), Offset(0f, bottomY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
+        drawLine(color, Offset(arrowLength, bottomY + arrowAngle), Offset(0f, bottomY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
     }
 }
 
@@ -395,9 +336,15 @@ private fun OptionsCard(state: UiState, onToggle: (OptionKey) -> Unit, onSystemT
         Spacer(Modifier.height(4.dp))
         OptionRow("Recursive scan", "Include files inside subfolders", state.options.recursive) { onToggle(OptionKey.RECURSIVE) }
         OptionRow("Skip hidden files", "Ignore dot-files and system artefacts", state.options.skipHidden) { onToggle(OptionKey.SKIP_HIDDEN) }
-        OptionRow("Per-extension subfolders", "Images/JPG/, Documents/PDF/, …", state.options.extSubfolders) { onToggle(OptionKey.EXT_SUBFOLDERS) }
-        OptionRow("Date subfolders", "Images/2026-10/ based on modified date", state.options.dateSubfolders) { onToggle(OptionKey.DATE_SUBFOLDERS) }
+        
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        
+        OptionRow("Group Documents by type", "Put PDFs in Documents/PDF/, TXTs in Documents/TXT/", state.options.docSubfolders) { onToggle(OptionKey.DOC_SUBFOLDERS) }
+        OptionRow("Subfolders for ALL files", "Images/JPG/, Videos/MP4/, etc.", state.options.extSubfolders) { onToggle(OptionKey.EXT_SUBFOLDERS) }
+        OptionRow("Date subfolders", "Images/2026-10/ based on modified date", state.options.dateSubfolders) { onToggle(OptionKey.DATE_SUBFOLDERS) }
+        
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        
         OptionRow(
             title = "Include System Folders", 
             subtitle = "Unlock Android/data (Dangerous)", 

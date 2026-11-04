@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.better.scyllanizer.data.Organizer
 import com.better.scyllanizer.data.StorageAccess
 import com.better.scyllanizer.data.UndoStore
+import com.better.scyllanizer.data.UpdateChecker
 import com.better.scyllanizer.model.OptionKey
 import com.better.scyllanizer.model.PlanResult
 import com.better.scyllanizer.model.Step
@@ -35,6 +36,14 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
         } else {
             _state.update { it.copy(rootPath = android.os.Environment.getExternalStorageDirectory().absolutePath) }
         }
+
+        // Check for updates silently
+        viewModelScope.launch {
+            val update = UpdateChecker.checkForUpdate(getApplication())
+            if (update != null) {
+                _state.update { it.copy(updateInfo = update) }
+            }
+        }
     }
 
     fun checkPermission() {
@@ -62,6 +71,7 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
                 OptionKey.SKIP_HIDDEN -> o.copy(skipHidden = !o.skipHidden)
                 OptionKey.DATE_SUBFOLDERS -> o.copy(dateSubfolders = !o.dateSubfolders)
                 OptionKey.EXT_SUBFOLDERS -> o.copy(extSubfolders = !o.extSubfolders)
+                OptionKey.DOC_SUBFOLDERS -> o.copy(docSubfolders = !o.docSubfolders)
                 OptionKey.DELETE_EMPTY -> o.copy(deleteEmptyFolders = !o.deleteEmptyFolders)
                 OptionKey.DELETE_ZERO -> o.copy(deleteZeroByteFiles = !o.deleteZeroByteFiles)
                 OptionKey.DELETE_DUPLICATES -> o.copy(deleteDuplicates = !o.deleteDuplicates)
@@ -205,4 +215,5 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
     fun reset() { _state.update { it.copy(step = Step.SETUP, plan = PlanResult(), selectedIds = emptySet(), result = null, undoResult = null, progress = 0f) } }
     fun clearError() { _state.update { it.copy(error = null) } }
     fun consumeMessage() { _state.update { it.copy(message = null) } }
+    fun dismissUpdate() { _state.update { it.copy(updateInfo = null) } }
 }

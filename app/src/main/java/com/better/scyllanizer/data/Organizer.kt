@@ -26,7 +26,13 @@ class Organizer {
                 if (child.isDirectory) {
                     if (child.name.startsWith(".")) continue
                     if (!options.recursive) continue
-                    if (child.name.equals("Android", true) || child.name.equals("LOST.DIR", true) || child.name.equals(".ScyllaTrash", true)) continue
+                    
+                    if (!options.includeSystemFolders) {
+                        if (child.name.equals("Android", true) || 
+                            child.name.equals("LOST.DIR", true) || 
+                            child.name.equals(".ScyllaTrash", true)) continue
+                    }
+                    
                     if (child.absolutePath in options.excludedPaths) continue
                     val childPath = if (parentPath.isEmpty()) child.name else "$parentPath/${child.name}"
                     walk(child, childPath)
@@ -110,6 +116,7 @@ class Organizer {
                 val children = dir.listFiles() ?: return
                 for (child in children) {
                     if (child.isDirectory && !child.name.startsWith(".") && child.name != ".ScyllaTrash" && child.absolutePath !in options.excludedPaths) {
+                        if (!options.includeSystemFolders && child.name.equals("Android", true)) continue
                         collectDirs(child)
                         dirs.add(child)
                     }
@@ -220,7 +227,7 @@ class Organizer {
                     if (!folder.exists() && folder.mkdirs()) {
                         restored++
                     } else if (folder.exists()) {
-                        restored++ // Already exists, count as success
+                        restored++
                     } else {
                         failed++
                     }
@@ -278,8 +285,16 @@ class Organizer {
 
     private fun folderSegments(file: FileEntry, options: SortOptions): List<String> {
         val segments = ArrayList<String>(3)
-        segments.add(CategoryMapper.categoryFor(file.extension))
-        if (options.extSubfolders && file.extension.isNotEmpty()) segments.add(file.extension.uppercase(Locale.ROOT))
+        val category = CategoryMapper.categoryFor(file.extension)
+        segments.add(category)
+        
+        // NEW: Doc-specific subfolders
+        if (options.extSubfolders && file.extension.isNotEmpty()) {
+            segments.add(file.extension.uppercase(Locale.ROOT))
+        } else if (options.docSubfolders && category == CategoryMapper.DOCUMENTS && file.extension.isNotEmpty()) {
+            segments.add(file.extension.uppercase(Locale.ROOT))
+        }
+
         if (options.dateSubfolders && file.lastModified > 0L) {
             val cal = Calendar.getInstance().apply { timeInMillis = file.lastModified }
             segments.add(String.format(Locale.ROOT, "%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1))
