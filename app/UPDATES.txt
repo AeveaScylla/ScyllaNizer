@@ -1,0 +1,9 @@
+ScyllaNizer Explorer UI refinement
+
+- Replaced the tall per-category horizontal bar list with a compact donut chart.
+- Added a center total showing the combined size of readable files.
+- Kept a compact color-key legend with each category's size.
+- Kept the storage used/free summary and refresh control.
+- No Gradle files, project settings, wrapper files, manifest, or ViewModel logic were changed in this refinement.
+
+Note: category totals reflect files the app can read; Android-protected folders may be excluded.

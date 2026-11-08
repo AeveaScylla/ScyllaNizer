@@ -24,10 +24,31 @@ class LocalServer(port: Int = 8080, private val rootFolder: File) : NanoHTTPD(po
                         "upload_${System.currentTimeMillis()}.bin"
                     }
                     
-                    val destFile = File(rootFolder, fileName)
-                    tmpFile.copyTo(destFile, overwrite = true)
-                    
-                    return newFixedLengthResponse(Response.Status.OK, "text/plain", "Uploaded $fileName")
+                    val safeName = fileName.trim().replace('\\', '/')
+                    if (safeName.isBlank() || safeName == "." || safeName == ".." ||
+                        safeName.contains('/') || safeName.any { it.isISOControl() }) {
+                        return newFixedLengthResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid file name")
+                    }
+
+                    val root = rootFolder.canonicalFile
+                    if (!root.exists() && !root.mkdirs()) {
+                        return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "Upload folder is unavailable")
+                    }
+                    var destFile = File(root, safeName).canonicalFile
+                    if (destFile.parentFile != root) {
+                        return newFixedLengthResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid file path")
+                    }
+                    // Never overwrite an existing file sent to the phone.
+                    val base = destFile.nameWithoutExtension
+                    val extension = destFile.extension.let { if (it.isBlank()) "" else ".$it" }
+                    var suffix = 1
+                    while (destFile.exists()) {
+                        destFile = File(root, "$base ($suffix)$extension")
+                        suffix++
+                    }
+                    tmpFile.copyTo(destFile, overwrite = false)
+
+                    return newFixedLengthResponse(Response.Status.OK, "text/plain", "Uploaded ${destFile.name}")
                 }
             } catch (e: Exception) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.message)
