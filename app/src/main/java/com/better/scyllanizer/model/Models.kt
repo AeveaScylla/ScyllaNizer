@@ -1,5 +1,6 @@
 package com.better.scyllanizer.model
 
+import com.better.scyllanizer.ui.theme.ThemeMode
 import java.io.File
 
 data class FileEntry(
@@ -55,8 +56,7 @@ data class SortOptions(
     val recursive: Boolean = true,
     val skipHidden: Boolean = true,
     val dateSubfolders: Boolean = false,
-    val extSubfolders: Boolean = false, // All files
-    val docSubfolders: Boolean = false, // Specifically for Documents
+    val extSubfolders: Boolean = false,
     val excludedPaths: Set<String> = emptySet(),
     val shredFiles: Boolean = false,
     val deleteEmptyFolders: Boolean = false,
@@ -67,9 +67,9 @@ data class SortOptions(
 
 enum class Step { SETUP, PREVIEW, RESULT }
 
-enum class OptionKey { 
-    RECURSIVE, SKIP_HIDDEN, DATE_SUBFOLDERS, EXT_SUBFOLDERS, DOC_SUBFOLDERS,
-    DELETE_EMPTY, DELETE_ZERO, DELETE_DUPLICATES, INCLUDE_SYSTEM 
+enum class OptionKey {
+    RECURSIVE, SKIP_HIDDEN, DATE_SUBFOLDERS, EXT_SUBFOLDERS,
+    DELETE_EMPTY, DELETE_ZERO, DELETE_DUPLICATES, INCLUDE_SYSTEM
 }
 
 data class UiState(
@@ -88,4 +88,5 @@ data class UiState(
     val error: String? = null,
     val message: String? = null,
     val updateInfo: com.better.scyllanizer.data.UpdateInfo? = null,
+    val themeMode: ThemeMode = ThemeMode.DARK,
 )

@@ -12,6 +12,7 @@ import com.better.scyllanizer.model.OptionKey
 import com.better.scyllanizer.model.PlanResult
 import com.better.scyllanizer.model.Step
 import com.better.scyllanizer.model.UiState
+import com.better.scyllanizer.ui.theme.ThemeMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +26,12 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
     private val undoStore = UndoStore(app)
     private val prefs = app.getSharedPreferences("scyllanizer_prefs", Context.MODE_PRIVATE)
 
-    private val _state = MutableStateFlow(UiState(canUndo = undoStore.hasEntries()))
+    private val _state = MutableStateFlow(
+        UiState(
+            canUndo = undoStore.hasEntries(),
+            themeMode = if (prefs.getString("theme_mode", "dark") == "light") ThemeMode.LIGHT else ThemeMode.DARK
+        )
+    )
     val state = _state.asStateFlow()
 
     init {
@@ -37,7 +43,6 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { it.copy(rootPath = android.os.Environment.getExternalStorageDirectory().absolutePath) }
         }
 
-        // Check for updates silently
         viewModelScope.launch {
             val update = UpdateChecker.checkForUpdate(getApplication())
             if (update != null) {
@@ -48,6 +53,16 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
 
     fun checkPermission() {
         _state.update { it.copy(hasPermission = StorageAccess.hasAllFilesAccess(getApplication())) }
+    }
+
+    fun toggleTheme() {
+        _state.update { current ->
+            val next = if (current.themeMode == ThemeMode.DARK) ThemeMode.LIGHT else ThemeMode.DARK
+            prefs.edit()
+                .putString("theme_mode", if (next == ThemeMode.DARK) "dark" else "light")
+                .apply()
+            current.copy(themeMode = next)
+        }
     }
 
     fun onFolderPicked(path: String) {
@@ -71,12 +86,10 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
                 OptionKey.SKIP_HIDDEN -> o.copy(skipHidden = !o.skipHidden)
                 OptionKey.DATE_SUBFOLDERS -> o.copy(dateSubfolders = !o.dateSubfolders)
                 OptionKey.EXT_SUBFOLDERS -> o.copy(extSubfolders = !o.extSubfolders)
-                OptionKey.DOC_SUBFOLDERS -> o.copy(docSubfolders = !o.docSubfolders)
                 OptionKey.DELETE_EMPTY -> o.copy(deleteEmptyFolders = !o.deleteEmptyFolders)
                 OptionKey.DELETE_ZERO -> o.copy(deleteZeroByteFiles = !o.deleteZeroByteFiles)
                 OptionKey.DELETE_DUPLICATES -> o.copy(deleteDuplicates = !o.deleteDuplicates)
                 OptionKey.INCLUDE_SYSTEM -> o.copy(includeSystemFolders = !o.includeSystemFolders)
-                else -> o
             })
         }
     }
@@ -144,7 +157,7 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
     fun confirmMove() {
         val snapshot = _state.value
         val movesToExecute = snapshot.plan.moves.filter { snapshot.selectedIds.contains(it.uniqueId) }
-        
+
         if (movesToExecute.isEmpty() || snapshot.isBusy) return
 
         _state.update { it.copy(isBusy = true, busyText = "Executing…", progress = 0f, error = null) }
@@ -160,17 +173,17 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
 
             outcome.onSuccess { result ->
                 withContext(Dispatchers.IO) { undoStore.save(result.undoEntries) }
-                _state.update { 
+                _state.update {
                     it.copy(
-                        isBusy = false, 
-                        progress = 0f, 
-                        plan = PlanResult(), 
-                        selectedIds = emptySet(), 
-                        result = result, 
-                        undoResult = null, 
+                        isBusy = false,
+                        progress = 0f,
+                        plan = PlanResult(),
+                        selectedIds = emptySet(),
+                        result = result,
+                        undoResult = null,
                         step = Step.RESULT,
                         canUndo = result.undoEntries.isNotEmpty()
-                    ) 
+                    )
                 }
             }.onFailure { t ->
                 _state.update { it.copy(isBusy = false, error = t.message ?: "Execution failed") }
@@ -195,15 +208,15 @@ class OrganizerViewModel(app: Application) : AndroidViewModel(app) {
 
             outcome.onSuccess { result ->
                 withContext(Dispatchers.IO) { undoStore.clear() }
-                _state.update { 
+                _state.update {
                     it.copy(
-                        isBusy = false, 
-                        progress = 0f, 
-                        undoResult = result, 
+                        isBusy = false,
+                        progress = 0f,
+                        undoResult = result,
                         message = "Restored ${result.restored} items",
                         canUndo = false,
                         step = Step.RESULT
-                    ) 
+                    )
                 }
             }.onFailure { t ->
                 _state.update { it.copy(isBusy = false, error = t.message ?: "Undo failed") }

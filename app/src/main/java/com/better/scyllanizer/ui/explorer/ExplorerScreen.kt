@@ -23,14 +23,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.better.scyllanizer.data.CategoryMapper
+import com.better.scyllanizer.ui.MiniCheckbox
 import com.better.scyllanizer.util.formatBytes
 import kotlinx.coroutines.launch
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExplorerScreen(vm: ExplorerViewModel = viewModel()) {
     val state by vm.state.collectAsState()
@@ -66,9 +67,9 @@ fun ExplorerScreen(vm: ExplorerViewModel = viewModel()) {
     if (state.error != null) {
         AlertDialog(
             onDismissRequest = { vm.clearError() },
-            title = { Text("Error") },
-            text = { Text(state.error!!) },
-            confirmButton = { TextButton(onClick = { vm.clearError() }) { Text("OK") } },
+            title = { Text("Error", fontSize = 16.0.sp, fontWeight = FontWeight.Bold) },
+            text = { Text(state.error!!, fontSize = 12.5.sp) },
+            confirmButton = { TextButton(onClick = { vm.clearError() }) { Text("OK", fontSize = 13.0.sp, fontWeight = FontWeight.Bold) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -136,47 +137,48 @@ fun ExplorerScreen(vm: ExplorerViewModel = viewModel()) {
                 }
             }
 
-            // Floating Action Bar
             if (state.selectedFiles.isNotEmpty() || state.clipboard.isNotEmpty()) {
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (state.selectedFiles.isNotEmpty()) {
-                            Text("${state.selectedFiles.size} selected", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("${state.selectedFiles.size} selected", fontSize = 12.0.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             Row {
-                                IconButton(onClick = { vm.copySelected() }) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
+                                IconButton(onClick = { vm.copySelected() }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(16.dp))
                                 }
-                                IconButton(onClick = { vm.cutSelected() }) {
-                                    Icon(Icons.Default.ContentCut, contentDescription = "Cut")
+                                IconButton(onClick = { vm.cutSelected() }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.ContentCut, contentDescription = "Cut", modifier = Modifier.size(16.dp))
                                 }
-                                IconButton(onClick = { vm.deleteSelected() }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                IconButton(onClick = { vm.deleteSelected() }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                 }
                             }
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("${state.clipboard.size} copied", fontWeight = FontWeight.Bold)
-                                Spacer(Modifier.width(8.dp))
+                                Text("${state.clipboard.size} copied", fontSize = 12.0.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.width(4.dp))
                                 IconButton(onClick = { vm.clearClipboard() }, modifier = Modifier.size(24.dp)) {
-                                    Icon(Icons.Default.Close, contentDescription = "Cancel", tint = MaterialTheme.colorScheme.error)
+                                    Icon(Icons.Default.Close, contentDescription = "Cancel", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
                                 }
                             }
                             Button(
                                 onClick = { vm.pasteInto(isLeftPaneActive) },
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp),
+                                modifier = Modifier.height(32.dp)
                             ) {
-                                Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Paste")
+                                Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Paste", fontSize = 12.0.sp)
                             }
                         }
                     }
@@ -184,24 +186,22 @@ fun ExplorerScreen(vm: ExplorerViewModel = viewModel()) {
             }
         }
 
-        // Snackbar Host overlaid at the bottom
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = if (state.selectedFiles.isNotEmpty() || state.clipboard.isNotEmpty()) 80.dp else 16.dp)
+                .padding(bottom = if (state.selectedFiles.isNotEmpty() || state.clipboard.isNotEmpty()) 64.dp else 12.dp)
         ) { data ->
             Snackbar(
                 snackbarData = data,
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(10.dp)
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilePane(
     modifier: Modifier = Modifier,
@@ -228,11 +228,10 @@ fun FilePane(
             )
             .clickable { onActiveClick() }
     ) {
-        // Clean Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
@@ -242,17 +241,20 @@ fun FilePane(
                     } else {
                         onRootAttempt()
                     }
-                }
+                },
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack, 
                     contentDescription = "Up",
-                    tint = if (canNavigateUp) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                    tint = if (canNavigateUp) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    modifier = Modifier.size(18.dp)
                 )
             }
+            Spacer(Modifier.width(4.dp))
             Text(
                 text = currentDir.name.ifEmpty { "Storage" },
-                style = MaterialTheme.typography.titleLarge,
+                fontSize = 15.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
@@ -260,19 +262,18 @@ fun FilePane(
                 overflow = TextOverflow.Ellipsis
             )
             if (showSwapButton) {
-                IconButton(onClick = onSwap) {
-                    Icon(Icons.Default.SwapHoriz, contentDescription = "Swap Pane", tint = MaterialTheme.colorScheme.primary)
+                IconButton(onClick = onSwap, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.SwapHoriz, contentDescription = "Swap Pane", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 }
             }
         }
         
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-        // File List
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             itemsIndexed(files) { _, file: File ->
                 FileRow(
@@ -323,31 +324,29 @@ fun FileRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(backgroundColor)
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .padding(12.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // X-Ray Indicator Pill
         Box(
             modifier = Modifier
-                .width(6.dp)
-                .height(32.dp)
-                .background(xrayColor.copy(alpha = 0.8f), RoundedCornerShape(3.dp))
+                .width(4.dp)
+                .height(24.dp)
+                .background(xrayColor.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
         )
         
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(12.dp))
 
-        // Icon or Thumbnail
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .size(32.dp)
+                .clip(RoundedCornerShape(6.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
@@ -363,61 +362,59 @@ fun FileRow(
                     imageVector = if (isDir) Icons.Default.Folder else Icons.Default.InsertDriveFile,
                     contentDescription = null,
                     tint = if (isDir) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
 
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(12.dp))
 
-        // File Info
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = file.name,
-                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 12.0.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (!isDir) {
-                    Box(modifier = Modifier.size(8.dp).background(xrayColor, RoundedCornerShape(50)))
-                    Spacer(Modifier.width(6.dp))
+                    Box(modifier = Modifier.size(5.dp).background(xrayColor, RoundedCornerShape(50)))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = category,
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 10.0.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(
                         text = "•",
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 10.0.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(
                         text = formatBytes(file.length()),
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 10.0.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
                     Text(
                         text = "Folder",
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 10.0.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
 
-        // Actions
         if (isZip) {
             IconButton(
                 onClick = onExtractZip,
-                modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)).size(36.dp)
+                modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(6.dp)).size(28.dp)
             ) {
-                Icon(Icons.Default.Archive, contentDescription = "Extract", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Archive, contentDescription = "Extract", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
             }
         }
     }

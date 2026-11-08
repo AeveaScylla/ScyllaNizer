@@ -288,10 +288,7 @@ class Organizer {
         val category = CategoryMapper.categoryFor(file.extension)
         segments.add(category)
         
-        // NEW: Doc-specific subfolders
         if (options.extSubfolders && file.extension.isNotEmpty()) {
-            segments.add(file.extension.uppercase(Locale.ROOT))
-        } else if (options.docSubfolders && category == CategoryMapper.DOCUMENTS && file.extension.isNotEmpty()) {
             segments.add(file.extension.uppercase(Locale.ROOT))
         }
 

@@ -1,17 +1,15 @@
-pluginManagement {
-    repositories {
+pluginManagement { 
+    repositories { 
         google()
         mavenCentral()
-        gradlePluginPortal()
-    }
+        gradlePluginPortal() 
+    } 
 }
-
-dependencyResolutionManagement {
-    repositories {
+dependencyResolutionManagement { 
+    repositories { 
         google()
-        mavenCentral()
-    }
+        mavenCentral() 
+    } 
 }
-
 rootProject.name = "ScyllaNizer"
 include(":app")

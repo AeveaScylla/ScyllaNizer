@@ -2,6 +2,7 @@ package com.better.scyllanizer.ui
 
 import android.widget.Toast
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,34 +11,42 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Computer
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.better.scyllanizer.data.CategoryMapper
 import com.better.scyllanizer.data.LocalServer
 import com.better.scyllanizer.data.StorageAccess
 import com.better.scyllanizer.model.OptionKey
 import com.better.scyllanizer.model.UiState
+import com.better.scyllanizer.ui.theme.ThemeMode
+import com.better.scyllanizer.util.formatBytes
 import java.io.File
 import java.net.NetworkInterface
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetupScreen(
     state: UiState,
@@ -47,7 +56,8 @@ fun SetupScreen(
     onAddExclusion: (String) -> Unit,
     onRemoveExclusion: (String) -> Unit,
     onToggleShred: (Boolean) -> Unit,
-    onUndo: () -> Unit
+    onUndo: () -> Unit,
+    onToggleTheme: () -> Unit
 ) {
     val context = LocalContext.current
     var showPicker by remember { mutableStateOf(false) }
@@ -58,147 +68,128 @@ fun SetupScreen(
     val subFolders = remember(state.rootPath) {
         val root = File(state.rootPath ?: "")
         if (root.exists() && root.isDirectory) {
-            root.listFiles { file -> file.isDirectory && !file.name.startsWith(".") }?.sortedBy { it.name.lowercase() } ?: emptyList()
+            root.listFiles { f -> f.isDirectory && !f.name.startsWith(".") }
+                ?.sortedBy { it.name.lowercase() } ?: emptyList()
         } else emptyList()
     }
 
     if (showSystemWarning) {
         AlertDialog(
             onDismissRequest = { showSystemWarning = false },
-            title = { Text("⚠️ System Folders", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) },
-            text = { Text("Are you absolutely sure? Modifying system folders (like Android/data or Android/obb) can cause installed apps to crash, lose data, or break completely.\n\nOnly proceed if you know exactly what you are doing.") },
+            title = {
+                Text(
+                    "System folders",
+                    fontSize = 16.0.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error
+                )
+            },
+            text = {
+                Text(
+                    "Modifying folders such as Android/data or Android/obb can crash installed apps or destroy their data.\n\nOnly continue if you know exactly what you are doing.",
+                    fontSize = 12.5.sp,
+                    lineHeight = 17.sp
+                )
+            },
             confirmButton = {
-                TextButton(onClick = { 
+                TextButton(onClick = {
                     showSystemWarning = false
-                    onToggle(OptionKey.INCLUDE_SYSTEM) 
-                }) { Text("I Understand", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) }
+                    onToggle(OptionKey.INCLUDE_SYSTEM)
+                }) {
+                    Text("I understand", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 13.0.sp)
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showSystemWarning = false }) { Text("Cancel") }
+                TextButton(onClick = { showSystemWarning = false }) {
+                    Text("Cancel", fontSize = 13.0.sp)
+                }
             },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.background) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Button(
-                        onClick = onPreview,
-                        enabled = state.hasPermission && state.rootPath != null,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .widthIn(max = 600.dp)
-                            .padding(horizontal = 20.dp, vertical = 4.dp)
-                            .height(50.dp),
-                    ) {
-                        Text("Preview plan", style = MaterialTheme.typography.titleMedium)
-                    }
-                }
-            }
+    val toggleServer: (Boolean) -> Unit = { checked ->
+        if (checked && state.rootPath != null) {
+            serverIp = getLocalIpAddress()
+            server = LocalServer(8080, File(state.rootPath)).also { it.start() }
+            Toast.makeText(context, "Server started at $serverIp:8080", Toast.LENGTH_LONG).show()
+        } else {
+            server?.stop()
+            server = null
         }
-    ) { padding ->
-        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
-            val isTablet = maxWidth > 600.dp
+    }
 
-            if (isTablet) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier.weight(1f).fillMaxWidth()
+        ) {
+            val wide = maxWidth > 720.dp
+
+            val leftBlock: @Composable ColumnScope.() -> Unit = {
+                AppHeader(state.themeMode, onToggleTheme)
+                TransferGraphic()
+                if (state.hasPermission) {
+                    FolderCard(state) { showPicker = true }
+                } else {
+                    PermissionCard()
+                }
+                if (state.canUndo) UndoBar(onUndo)
+                if (!wide && state.plan.scanned > 0) StorageCard(state)
+                
+                SortingCard(state, onToggle) {
+                    if (state.options.includeSystemFolders) onToggle(OptionKey.INCLUDE_SYSTEM)
+                    else showSystemWarning = true
+                }
+                CleanupCard(state, onToggle, onToggleShred)
+            }
+
+            val rightBlock: @Composable ColumnScope.() -> Unit = {
+                if (wide) {
+                    if (state.plan.scanned > 0) StorageCard(state)
+                }
+                WifiCard(state, server, serverIp, toggleServer)
+                ExclusionsCard(state, subFolders, onAddExclusion, onRemoveExclusion)
+                CategoriesCard()
+                Spacer(Modifier.height(8.dp))
+            }
+
+            if (wide) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .widthIn(max = 1200.dp)
-                        .align(Alignment.TopCenter)
-                        .padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Column(
                         modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        ScreenHeader()
-                        PermissionOrFolder(state, onPickFolder = { showPicker = true })
-                        
-                        if (state.canUndo) {
-                            OutlinedButton(
-                                onClick = onUndo,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                            ) {
-                                Text("Undo Last Sort", fontWeight = FontWeight.Bold)
-                            }
-                        }
-                        
-                        if (state.plan.scanned > 0) StorageCard(state)
-                        OptionsCard(state, onToggle, onSystemToggleClick = {
-                            if (state.options.includeSystemFolders) onToggle(OptionKey.INCLUDE_SYSTEM) else showSystemWarning = true
-                        })
-                        CleanupCard(state, onToggle, onToggleShred)
-                    }
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        content = leftBlock
+                    )
                     Column(
                         modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Spacer(Modifier.height(72.dp))
-                        WifiDropCard(state, server, serverIp, onToggleServer = { isChecked ->
-                            if (isChecked && state.rootPath != null) {
-                                serverIp = getLocalIpAddress()
-                                server = LocalServer(8080, File(state.rootPath)).also { it.start() }
-                                Toast.makeText(context, "Server started at $serverIp:8080", Toast.LENGTH_LONG).show()
-                            } else { server?.stop(); server = null }
-                        })
-                        ExclusionsCard(state, subFolders, onAddExclusion, onRemoveExclusion)
-                        CategoriesCard()
-                    }
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        content = rightBlock
+                    )
                 }
             } else {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 0.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ScreenHeader()
-
-                    PermissionOrFolder(state, onPickFolder = { showPicker = true })
-                    
-                    if (state.canUndo) {
-                        OutlinedButton(
-                            onClick = onUndo,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text("Undo Last Sort", fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    if (state.plan.scanned > 0) StorageCard(state)
-                    WifiDropCard(state, server, serverIp, onToggleServer = { isChecked ->
-                        if (isChecked && state.rootPath != null) {
-                            serverIp = getLocalIpAddress()
-                            server = LocalServer(8080, File(state.rootPath)).also { it.start() }
-                            Toast.makeText(context, "Server started at $serverIp:8080", Toast.LENGTH_LONG).show()
-                        } else { server?.stop(); server = null }
-                    })
-                    OptionsCard(state, onToggle, onSystemToggleClick = {
-                        if (state.options.includeSystemFolders) onToggle(OptionKey.INCLUDE_SYSTEM) else showSystemWarning = true
-                    })
-                    CleanupCard(state, onToggle, onToggleShred)
-                    ExclusionsCard(state, subFolders, onAddExclusion, onRemoveExclusion)
-                    CategoriesCard()
-                    Spacer(Modifier.height(16.dp))
+                    leftBlock()
+                    rightBlock()
                 }
             }
         }
+        
+        BottomDock(
+            text = "Preview plan",
+            enabled = state.hasPermission && state.rootPath != null,
+            onClick = onPreview
+        )
     }
 
     if (showPicker) {
@@ -212,144 +203,293 @@ fun SetupScreen(
 }
 
 @Composable
-fun ScreenHeader() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 0.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+private fun AppHeader(mode: ThemeMode, onToggleTheme: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 0.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "ScyllaNizer", 
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold, 
+            text = "ScyllaNizer",
+            fontSize = 18.0.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = (-0.4).sp,
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(Modifier.height(8.dp))
-        ScyllaHeaderGraphic()
+        Spacer(Modifier.weight(1f))
+        IconButton(onClick = onToggleTheme, modifier = Modifier.size(34.dp)) {
+            Icon(
+                imageVector = if (mode == ThemeMode.DARK) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                contentDescription = "Switch theme",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }
 
 @Composable
-fun ScyllaHeaderGraphic() {
+private fun TransferGraphic() {
+    val infiniteTransition = rememberInfiniteTransition(label = "transfer")
+
+    val cycle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cycle"
+    )
+
+    val p = cycle * 2f
+
+    val arrow1Pos = when {
+        p < 0.5f -> p * 2f
+        p < 1.5f -> 1f
+        else -> 4f - 2f * p
+    }.coerceIn(0f, 1f)
+
+    val arrow2Pos = when {
+        p < 0.5f -> 0f
+        p < 1.0f -> (p - 0.5f) * 2f
+        p < 1.5f -> 3f - 2f * p
+        else -> 0f
+    }.coerceIn(0f, 1f)
+
+    val arrow1RightAlpha = if (p < 0.5f) 1f else 0.25f
+    val arrow1LeftAlpha = if (p >= 1.5f) 1f else 0.25f
+    val arrow2RightAlpha = if (p >= 0.5f && p < 1.0f) 1f else 0.25f
+    val arrow2LeftAlpha = if (p >= 1.0f && p < 1.5f) 1f else 0.25f
+
+    val accent = MaterialTheme.colorScheme.primary
+    val phoneBlue = Color(0xFF60A5FA)
+    val folderYellow = Color(0xFFFBBF24)
+    val pcGreen = Color(0xFF4ADE80)
+
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp, horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = Icons.Outlined.Smartphone,
             contentDescription = "Phone",
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(20.dp)
+            tint = phoneBlue,
+            modifier = Modifier.size(32.dp)
         )
-        
-        AnimatedArrowConnector(modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
-        
+
+        BidirectionalArrow(
+            progress = arrow1Pos,
+            rightAlpha = arrow1RightAlpha,
+            leftAlpha = arrow1LeftAlpha,
+            color = accent,
+            modifier = Modifier.weight(1f).height(20.dp).padding(horizontal = 8.dp)
+        )
+
         Icon(
             imageVector = Icons.Outlined.Folder,
-            contentDescription = "Folders",
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(28.dp)
+            contentDescription = "Folder",
+            tint = folderYellow,
+            modifier = Modifier.size(32.dp)
         )
-        
-        AnimatedArrowConnector(modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
-        
+
+        BidirectionalArrow(
+            progress = arrow2Pos,
+            rightAlpha = arrow2RightAlpha,
+            leftAlpha = arrow2LeftAlpha,
+            color = accent,
+            modifier = Modifier.weight(1f).height(20.dp).padding(horizontal = 8.dp)
+        )
+
         Icon(
             imageVector = Icons.Outlined.Computer,
             contentDescription = "PC",
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(20.dp)
+            tint = pcGreen,
+            modifier = Modifier.size(32.dp)
         )
     }
 }
 
 @Composable
-fun AnimatedArrowConnector(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "dash_anim")
-    val phase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 24f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "dash_phase"
-    )
-
-    Canvas(modifier = modifier.height(32.dp)) {
-        val topY = 10.dp.toPx()
-        val bottomY = size.height - 10.dp.toPx()
-        val strokeWidth = 2.dp.toPx()
-        val arrowLength = 8.dp.toPx()
-        val arrowAngle = 5.dp.toPx()
-        val color = Color(0xFF06B6D4)
+private fun BidirectionalArrow(
+    progress: Float,
+    rightAlpha: Float,
+    leftAlpha: Float,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val y = size.height / 2f
+        val headLen = 5.dp.toPx()
+        val headSize = 3.dp.toPx()
+        val usable = (size.width - headLen * 2f).coerceAtLeast(1f)
+        val stroke = 1.5.dp.toPx()
 
         drawLine(
-            color = color,
-            start = Offset(0f, topY),
-            end = Offset(size.width, topY), 
-            strokeWidth = strokeWidth,
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), phase),
+            color = color.copy(alpha = 0.18f),
+            start = Offset(headLen, y),
+            end = Offset(size.width - headLen, y),
+            strokeWidth = stroke,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(3f, 5f), 0f),
             cap = StrokeCap.Round
         )
-        drawLine(color, Offset(size.width - arrowLength, topY - arrowAngle), Offset(size.width, topY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
-        drawLine(color, Offset(size.width - arrowLength, topY + arrowAngle), Offset(size.width, topY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
 
-        drawLine(
-            color = color,
-            start = Offset(size.width, bottomY),
-            end = Offset(0f, bottomY),
-            strokeWidth = strokeWidth,
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), -phase),
-            cap = StrokeCap.Round
-        )
-        drawLine(color, Offset(arrowLength, bottomY - arrowAngle), Offset(0f, bottomY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
-        drawLine(color, Offset(arrowLength, bottomY + arrowAngle), Offset(0f, bottomY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
-    }
-}
-
-@Composable
-private fun PermissionOrFolder(state: UiState, onPickFolder: () -> Unit) {
-    val context = LocalContext.current
-    if (!state.hasPermission) {
-        SectionCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                Text("Permission Required", modifier = Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-            }
-            Spacer(Modifier.height(8.dp))
-            Text("To organize root folders, Android requires \"All Files Access\".", style = MaterialTheme.typography.bodySmall)
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = { StorageAccess.requestAllFilesAccess(context) }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Grant Permission") }
+        val leftHead = Path().apply {
+            moveTo(headLen, y - headSize)
+            lineTo(0f, y)
+            lineTo(headLen, y + headSize)
         }
-    } else {
-        FolderCard(state, onPickFolder)
+        drawPath(
+            leftHead,
+            color = color.copy(alpha = leftAlpha),
+            style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+
+        val rightHead = Path().apply {
+            moveTo(size.width - headLen, y - headSize)
+            lineTo(size.width, y)
+            lineTo(size.width - headLen, y + headSize)
+        }
+        drawPath(
+            rightHead,
+            color = color.copy(alpha = rightAlpha),
+            style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+
+        val dotX = headLen + progress.coerceIn(0f, 1f) * usable
+        val center = Offset(dotX, y)
+
+        drawCircle(color = color.copy(alpha = 0.10f), radius = 6.dp.toPx(), center = center)
+        drawCircle(color = color.copy(alpha = 0.22f), radius = 3.5.dp.toPx(), center = center)
+        drawCircle(color = color, radius = 1.8.dp.toPx(), center = center)
     }
 }
 
 @Composable
-private fun OptionsCard(state: UiState, onToggle: (OptionKey) -> Unit, onSystemToggleClick: () -> Unit) {
+private fun FolderCard(state: UiState, onPick: () -> Unit) {
     SectionCard {
-        CardTitle("Sorting Options")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = state.rootPath?.substringAfterLast("/")?.ifBlank { "Storage" } ?: "No folder",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = state.rootPath ?: "—",
+                    fontSize = 10.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(Modifier.width(6.dp))
+            LinkButton("Change", onPick)
+        }
+    }
+}
+
+@Composable
+private fun PermissionCard() {
+    val context = LocalContext.current
+    SectionCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Filled.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(15.dp)
+            )
+            Spacer(Modifier.width(7.dp))
+            Text(
+                "All Files Access required",
+                fontSize = 13.0.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Android needs full storage access before ScyllaNizer can organise anything.",
+            fontSize = 11.0.sp,
+            lineHeight = 15.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(10.dp))
+        Button(
+            onClick = { StorageAccess.requestAllFilesAccess(context) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
+            ),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth().height(36.dp)
+        ) {
+            Text("Grant permission", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun UndoBar(onUndo: () -> Unit) {
+    OutlinedButton(
+        onClick = onUndo,
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        modifier = Modifier.fillMaxWidth().height(36.dp)
+    ) {
+        Text("Undo last sort", fontSize = 12.0.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun SortingCard(state: UiState, onToggle: (OptionKey) -> Unit, onSystemClick: () -> Unit) {
+    SectionCard {
+        CardLabel("Sorting Options")
         Spacer(Modifier.height(4.dp))
-        OptionRow("Recursive scan", "Include files inside subfolders", state.options.recursive) { onToggle(OptionKey.RECURSIVE) }
-        OptionRow("Skip hidden files", "Ignore dot-files and system artefacts", state.options.skipHidden) { onToggle(OptionKey.SKIP_HIDDEN) }
-        
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
-        
-        OptionRow("Group Documents by type", "Put PDFs in Documents/PDF/, TXTs in Documents/TXT/", state.options.docSubfolders) { onToggle(OptionKey.DOC_SUBFOLDERS) }
-        OptionRow("Subfolders for ALL files", "Images/JPG/, Videos/MP4/, etc.", state.options.extSubfolders) { onToggle(OptionKey.EXT_SUBFOLDERS) }
-        OptionRow("Date subfolders", "Images/2026-10/ based on modified date", state.options.dateSubfolders) { onToggle(OptionKey.DATE_SUBFOLDERS) }
-        
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
-        
-        OptionRow(
-            title = "Include System Folders", 
-            subtitle = "Unlock Android/data (Dangerous)", 
-            checked = state.options.includeSystemFolders, 
-            onToggle = onSystemToggleClick
+        CompactOptionRow(
+            "Recursive scan",
+            "Include files inside subfolders",
+            state.options.recursive
+        ) { onToggle(OptionKey.RECURSIVE) }
+        CompactOptionRow(
+            "Skip hidden files",
+            "Ignore dot-files and system artefacts",
+            state.options.skipHidden
+        ) { onToggle(OptionKey.SKIP_HIDDEN) }
+        CompactOptionRow(
+            "Subfolders for ALL files",
+            "Images/JPG/, Videos/MP4/, etc.",
+            state.options.extSubfolders
+        ) { onToggle(OptionKey.EXT_SUBFOLDERS) }
+        CompactOptionRow(
+            "Date subfolders",
+            "Images/2026-10/ based on modified date",
+            state.options.dateSubfolders
+        ) { onToggle(OptionKey.DATE_SUBFOLDERS) }
+        CompactOptionRow(
+            "Include System Folders",
+            "Unlock Android/data (Dangerous)",
+            state.options.includeSystemFolders,
+            onSystemClick
         )
     }
 }
@@ -357,77 +497,117 @@ private fun OptionsCard(state: UiState, onToggle: (OptionKey) -> Unit, onSystemT
 @Composable
 private fun CleanupCard(state: UiState, onToggle: (OptionKey) -> Unit, onToggleShred: (Boolean) -> Unit) {
     SectionCard {
-        CardTitle("Deep Cleanup (Trash)")
-        Spacer(Modifier.height(4.dp))
-        OptionRow("Delete 0-byte files", "Remove corrupted or failed download files", state.options.deleteZeroByteFiles) { onToggle(OptionKey.DELETE_ZERO) }
-        OptionRow("Delete duplicates", "Find identical files via MD5 hash", state.options.deleteDuplicates) { onToggle(OptionKey.DELETE_DUPLICATES) }
-        OptionRow("Delete empty folders", "Remove directories with no files", state.options.deleteEmptyFolders) { onToggle(OptionKey.DELETE_EMPTY) }
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
-        OptionRow("Shred deleted files", "Securely overwrite data (NO UNDO)", state.options.shredFiles) { onToggleShred(!state.options.shredFiles) }
+        CardLabel("Cleanup")
+        Spacer(Modifier.height(8.dp))
+        ChipGrid(
+            listOf(
+                ChipOption("0-byte files", state.options.deleteZeroByteFiles) { onToggle(OptionKey.DELETE_ZERO) },
+                ChipOption("Duplicates", state.options.deleteDuplicates) { onToggle(OptionKey.DELETE_DUPLICATES) },
+                ChipOption("Empty dirs", state.options.deleteEmptyFolders) { onToggle(OptionKey.DELETE_EMPTY) },
+                ChipOption("Shred", state.options.shredFiles) { onToggleShred(!state.options.shredFiles) },
+            )
+        )
     }
 }
 
 @Composable
-private fun WifiDropCard(state: UiState, server: LocalServer?, serverIp: String?, onToggleServer: (Boolean) -> Unit) {
+private fun WifiCard(state: UiState, server: LocalServer?, serverIp: String?, onToggleServer: (Boolean) -> Unit) {
     SectionCard {
-        CardTitle("Wi-Fi Drop")
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            Column(Modifier.weight(1f)) {
-                Text("Local Web Server", style = MaterialTheme.typography.bodyLarge)
-                Text(if (server != null) "http://$serverIp:8080" else "Upload from PC browser", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.Wifi,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
             }
-            Switch(checked = server != null, onCheckedChange = onToggleServer, enabled = state.rootPath != null)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Wi-Fi Drop", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = if (server != null) "http://$serverIp:8080" else "Upload from a PC browser",
+                    fontSize = 10.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Switch(
+                checked = server != null,
+                onCheckedChange = onToggleServer,
+                enabled = state.rootPath != null,
+                modifier = Modifier.scale(0.8f),
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
         }
     }
 }
 
 @Composable
-private fun ExclusionsCard(state: UiState, subFolders: List<File>, onAdd: (String) -> Unit, onRemove: (String) -> Unit) {
+private fun ExclusionsCard(
+    state: UiState,
+    subFolders: List<File>,
+    onAdd: (String) -> Unit,
+    onRemove: (String) -> Unit
+) {
     SectionCard {
-        CardTitle("Excluded Folders")
-        Spacer(Modifier.height(4.dp))
-        Text("Tick folders to IGNORE during sorting.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(8.dp))
+        CardLabel("Excluded folders")
+        Spacer(Modifier.height(6.dp))
         if (subFolders.isEmpty()) {
-            Text("No subfolders found.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                "No subfolders found",
+                fontSize = 11.0.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         } else {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 subFolders.forEach { folder ->
                     val isSystem = folder.name.equals("Android", true) || folder.name.equals("LOST.DIR", true)
-                    val isEnabled = !isSystem || state.options.includeSystemFolders
-                    val isExcluded = state.options.excludedPaths.contains(folder.absolutePath)
-                    
+                    val enabled = !isSystem || state.options.includeSystemFolders
+                    val excluded = state.options.excludedPaths.contains(folder.absolutePath)
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(enabled = isEnabled) { if (isExcluded) onRemove(folder.absolutePath) else onAdd(folder.absolutePath) }
-                            .padding(vertical = 4.dp), 
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable(enabled = enabled) {
+                                if (excluded) onRemove(folder.absolutePath) else onAdd(folder.absolutePath)
+                            }
+                            .padding(vertical = 5.dp, horizontal = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Checkbox(
-                            checked = isExcluded, 
-                            onCheckedChange = { checked -> if (checked) onAdd(folder.absolutePath) else onRemove(folder.absolutePath) }, 
-                            enabled = isEnabled,
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = MaterialTheme.colorScheme.error,
-                                disabledCheckedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                                disabledUncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                            )
-                        )
+                        MiniCheckbox(checked = excluded, enabled = enabled)
+                        Spacer(Modifier.width(9.dp))
                         Text(
-                            text = folder.name, 
-                            style = MaterialTheme.typography.bodyMedium, 
-                            color = if (isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.padding(start = 8.dp), 
-                            maxLines = 1, 
-                            overflow = TextOverflow.Ellipsis
+                            text = folder.name,
+                            fontSize = 12.0.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = if (enabled) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.weight(1f)
                         )
                         if (isSystem && !state.options.includeSystemFolders) {
-                            Spacer(Modifier.width(8.dp))
                             Text(
-                                "(System - Locked)", 
-                                style = MaterialTheme.typography.labelSmall, 
-                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                "LOCKED",
+                                fontSize = 9.0.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.75f)
                             )
                         }
                     }
@@ -437,80 +617,95 @@ private fun ExclusionsCard(state: UiState, subFolders: List<File>, onAdd: (Strin
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CategoriesCard() {
+    SectionCard {
+        CardLabel("Destinations")
+        Spacer(Modifier.height(8.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            CategoryMapper.categories.forEach { category ->
+                Text(
+                    text = category,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(horizontal = 7.dp, vertical = 3.dp)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun StorageCard(state: UiState) {
     SectionCard {
-        CardTitle("Storage Breakdown")
-        Spacer(Modifier.height(16.dp))
+        CardLabel("Storage")
+        Spacer(Modifier.height(10.dp))
         DonutChart(state)
     }
 }
 
 @Composable
-private fun CategoriesCard() {
-    SectionCard {
-        CardTitle("Destination categories")
-        Spacer(Modifier.height(10.dp))
-        FlowRowHelper()
-    }
-}
+private fun DonutChart(state: UiState) {
+    val categorySizes = state.plan.moves
+        .groupBy { it.category }
+        .mapValues { entry -> entry.value.sumOf { it.entry?.size ?: 0L } }
+    val total = categorySizes.values.sum().toFloat()
+    if (total <= 0f) return
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun FlowRowHelper() {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        CategoryMapper.categories.forEach { category ->
-            Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer) {
-                Text(category, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun DonutChart(state: UiState) {
-    val categorySizes = state.plan.moves.groupBy { it.category }.mapValues { entry -> entry.value.sumOf { it.entry?.size ?: 0L } }
-    val totalSize = categorySizes.values.sum().toFloat()
-    if (totalSize == 0f) return
-    val colors = listOf(Color(0xFF06B6D4), Color(0xFF3B82F6), Color(0xFF8B5CF6), Color(0xFFF59E0B), Color(0xFFEF4444))
+    val palette = listOf(
+        Color(0xFF22D3EE),
+        Color(0xFF60A5FA),
+        Color(0xFFC084FC),
+        Color(0xFFFBBF24),
+        Color(0xFF64748B)
+    )
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Canvas(modifier = Modifier.size(120.dp)) {
+        Canvas(modifier = Modifier.size(56.dp)) {
+            val stroke = 9.dp.toPx()
+            val inset = stroke / 2f
             var startAngle = -90f
             categorySizes.entries.forEachIndexed { index, entry ->
-                val sweepAngle = (entry.value / totalSize) * 360f
-                drawArc(color = colors[index % colors.size], startAngle = startAngle, sweepAngle = sweepAngle, useCenter = false, style = Stroke(width = 30f, cap = StrokeCap.Round), size = Size(size.width, size.height), topLeft = Offset(30f, 30f))
-                startAngle += sweepAngle
+                val sweep = (entry.value / total) * 360f
+                drawArc(
+                    color = palette[index % palette.size],
+                    startAngle = startAngle,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    style = Stroke(width = stroke, cap = StrokeCap.Butt),
+                    topLeft = Offset(inset, inset),
+                    size = Size(size.width - stroke, size.height - stroke)
+                )
+                startAngle += sweep
             }
         }
-        Spacer(Modifier.width(24.dp))
-        Column {
+        Spacer(Modifier.width(14.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             categorySizes.entries.forEachIndexed { index, entry ->
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-                    Box(Modifier.size(10.dp).background(colors[index % colors.size], RoundedCornerShape(50)))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(6.dp)
+                            .background(palette[index % palette.size], RoundedCornerShape(2.dp))
+                    )
                     Spacer(Modifier.width(6.dp))
-                    Text(entry.key, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "${entry.key} · ${formatBytes(entry.value)}",
+                        fontSize = 10.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun FolderCard(state: UiState, onPickFolder: () -> Unit) {
-    SectionCard {
-        CardTitle("Folder to organise")
-        Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.size(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(text = state.rootPath?.substringAfterLast("/") ?: "No folder selected", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(text = state.rootPath ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-        Button(onClick = onPickFolder, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) { Text("Change folder") }
     }
 }
 
@@ -522,9 +717,12 @@ fun getLocalIpAddress(): String? {
             val addresses = networkInterface.inetAddresses
             while (addresses.hasMoreElements()) {
                 val address = addresses.nextElement()
-                if (!address.isLoopbackAddress && address is java.net.Inet4Address) return address.hostAddress
+                if (!address.isLoopbackAddress && address is java.net.Inet4Address) {
+                    return address.hostAddress
+                }
             }
         }
-    } catch (e: Exception) {}
+    } catch (_: Exception) {
+    }
     return null
 }
