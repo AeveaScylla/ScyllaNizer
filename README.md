@@ -1,6 +1,6 @@
 # 🐉 ScyllaNizer
 
-**ScyllaNizer** is a sleek, powerful, and ultra-fast file organizer and explorer for Android. It scans any folder, categorizes files by extension, and safely moves them with a full dry-run preview. It also features a built-in dual-pane file explorer with an "X-Ray" view to see exactly where your files will be sorted.
+**ScyllaNizer** is a sleek, powerful, and ultra-fast file organizer and explorer for Android. It scans any folder, categorizes files by extension, and safely moves them with a full dry-run preview.
 
 Built with **Kotlin** and **Jetpack Compose**, ScyllaNizer features a gorgeous "Glossy Black & Electric Cyan" UI that adapts perfectly to both phones and large tablets.
 
@@ -29,19 +29,19 @@ Built with **Kotlin** and **Jetpack Compose**, ScyllaNizer features a gorgeous "
 
 | Organizer | Explorer |
 | --- | --- |
-| ![ScyllaNizer organizer screen](Screenshot_20261102-123949.png) | ![ScyllaNizer explorer screen](Screenshot_20261102-124000.png) |
+| ![ScyllaNizer organizer screen](Screenshot_20261108-123826.png) | ![ScyllaNizer explorer screen](Screenshot_20261108-123903.png) |
 
 ## 🤔 How does ScyllaNizer compare?
 
-ScyllaNizer is not the only project of its kind, but its exact combination of glossy aesthetics, a built-in PC drag-and-drop server, and dry-run previews makes it quite unique. Several other open-source (FOSS) and proprietary tools on Android focus specifically on automated file organization and smart categorization, but they all take different approaches.
+ScyllaNizer is not the only project of its kind, but its exact combination of glossy aesthetics, a built-in PC drag-and-drop server, and dry-run previews makes it quite unique. Several other open-source alternatives exist, but none combine the same mix of utility and polish.
 
 ### Direct Open-Source Alternatives
-*   **FilePipe:** Perhaps the closest direct open-source competitor. It is built specifically around automated sorting using smart rules. You can set it to automatically move, copy, or sort media and files based on extension, size, or custom name patterns on a daily or weekly schedule.
+*   **FilePipe:** Perhaps the closest direct open-source competitor. It is built specifically around automated sorting using smart rules. You can set it to automatically move, copy, or sort media files, all while preserving a sense of control.
 *   **AnExplorer:** An open-source file explorer that features automatic sorting across various device types (phones, tablets, and Android TVs).
 *   **Pile:** A privacy-first, offline FOSS application designed specifically to organize clutter and loose documents using tags instead of rigid folder structures.
 
 ### Why ScyllaNizer Stands Out
-ScyllaNizer stands out because many traditional FOSS mainstays—like Amaze File Manager or Fossify—excel at traditional file workflows and privacy, but they don't automatically restructure a messy directory out-of-the-box like a dedicated organizer does.
+ScyllaNizer stands out because many traditional FOSS mainstays—like Amaze File Manager or Fossify—excel at traditional file workflows and privacy, but they don't automatically restructure a messy storage layout for you.
 
 ScyllaNizer bridges the gap:
 1. **No complex rules to set up** (unlike FilePipe). Just pick a folder and tap Scan.
