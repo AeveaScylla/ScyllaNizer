@@ -3,7 +3,11 @@ package com.better.scyllanizer.data
 import fi.iki.elonen.NanoHTTPD
 import java.io.File
 
-class LocalServer(port: Int = 8080, private val rootFolder: File) : NanoHTTPD(port) {
+class LocalServer(
+    port: Int = 8080,
+    private val rootFolder: File,
+    private val initialDestination: String = ""
+) : NanoHTTPD(port) {
 
     override fun serve(session: IHTTPSession): Response {
         return try {
@@ -130,7 +134,7 @@ class LocalServer(port: Int = 8080, private val rootFolder: File) : NanoHTTPD(po
             <input id="fileInput" type="file" multiple><input id="folderInput" type="file" multiple webkitdirectory directory>
             <progress id="progress" max="100" value="0" hidden></progress><div id="status" role="status"></div></section>
             </main><script>
-            const $=id=>document.getElementById(id);let destination='',browsePath='';let busy=false;
+            const $=id=>document.getElementById(id);let destination='${jsonEscape(initialDestination)}',browsePath='';let busy=false;
             function showPath(){ $('currentPath').textContent='/'+destination; }
             async function loadFolders(path){browsePath=path;const r=await fetch('/api/folders?path='+encodeURIComponent(path));if(!r.ok)throw new Error(await r.text());const data=await r.json();$('folderList').innerHTML='';if(path){const parent=path.split('/').slice(0,-1).join('/');const b=document.createElement('button');b.className='folder';b.textContent='📁 ..';b.onclick=()=>loadFolders(parent);$('folderList').append(b)}
             if(!data.folders.length){const e=document.createElement('div');e.className='muted';e.textContent='No subfolders';$('folderList').append(e)}

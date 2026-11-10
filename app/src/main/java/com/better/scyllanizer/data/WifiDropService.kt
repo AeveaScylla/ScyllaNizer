@@ -34,6 +34,7 @@ class WifiDropService : Service() {
             }
             ACTION_START -> {
                 val rootPath = intent.getStringExtra(EXTRA_ROOT_PATH)
+                val initialDestination = intent.getStringExtra(EXTRA_INITIAL_DESTINATION).orEmpty()
                 if (rootPath.isNullOrBlank()) {
                     stopSelf(startId)
                     return START_NOT_STICKY
@@ -41,7 +42,7 @@ class WifiDropService : Service() {
                 startForegroundCompat()
                 try {
                     server?.stop()
-                    server = LocalServer(PORT, File(rootPath)).also { it.start() }
+                    server = LocalServer(PORT, File(rootPath), initialDestination).also { it.start() }
                     _isRunning.value = true
                 } catch (_: Exception) {
                     _isRunning.value = false
@@ -113,6 +114,7 @@ class WifiDropService : Service() {
         const val ACTION_START = "com.better.scyllanizer.action.WIFI_DROP_START"
         const val ACTION_STOP = "com.better.scyllanizer.action.WIFI_DROP_STOP"
         const val EXTRA_ROOT_PATH = "wifi_drop_root_path"
+        const val EXTRA_INITIAL_DESTINATION = "wifi_drop_initial_destination"
         private const val PORT = 8080
         private const val CHANNEL_ID = "wifi_drop_service"
         private const val NOTIFICATION_ID = 8080

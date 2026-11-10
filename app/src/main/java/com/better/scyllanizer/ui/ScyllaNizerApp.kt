@@ -1,6 +1,8 @@
 package com.better.scyllanizer.ui
 
 import android.content.Intent
+import android.os.Environment
+import java.io.File
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -41,9 +43,21 @@ fun ScyllaNizerApp(vm: OrganizerViewModel = viewModel()) {
     val toggleWifiServer: (Boolean) -> Unit = { enabled ->
         if (enabled && state.rootPath != null) {
             wifiServerIp = getLocalIpAddress()
+            // Browse from the shared-storage root, but open the web picker at the
+            // same folder selected in Organizer. This reuses the app's existing
+            // MANAGE_EXTERNAL_STORAGE permission and avoids locking uploads to Downloads.
+            val storageRoot = Environment.getExternalStorageDirectory().canonicalFile
+            val selectedFolder = File(state.rootPath!!).canonicalFile
+            val initialDestination = if (
+                selectedFolder == storageRoot || selectedFolder.path.startsWith(storageRoot.path + File.separator)
+            ) {
+                selectedFolder.path.removePrefix(storageRoot.path).trimStart(File.separatorChar)
+                    .replace(File.separatorChar, '/')
+            } else ""
             val intent = Intent(context, WifiDropService::class.java).apply {
                 action = WifiDropService.ACTION_START
-                putExtra(WifiDropService.EXTRA_ROOT_PATH, state.rootPath)
+                putExtra(WifiDropService.EXTRA_ROOT_PATH, storageRoot.absolutePath)
+                putExtra(WifiDropService.EXTRA_INITIAL_DESTINATION, initialDestination)
             }
             ContextCompat.startForegroundService(context, intent)
         } else {
