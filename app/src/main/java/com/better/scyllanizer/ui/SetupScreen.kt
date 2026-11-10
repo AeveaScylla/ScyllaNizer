@@ -1,6 +1,5 @@
 package com.better.scyllanizer.ui
 
-import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -38,7 +37,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.better.scyllanizer.data.CategoryMapper
-import com.better.scyllanizer.data.LocalServer
 import com.better.scyllanizer.data.StorageAccess
 import com.better.scyllanizer.model.OptionKey
 import com.better.scyllanizer.model.UiState
@@ -57,13 +55,13 @@ fun SetupScreen(
     onRemoveExclusion: (String) -> Unit,
     onToggleShred: (Boolean) -> Unit,
     onUndo: () -> Unit,
-    onToggleTheme: () -> Unit
+    onToggleTheme: () -> Unit,
+    wifiServerActive: Boolean,
+    wifiServerIp: String?,
+    onToggleWifiServer: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
     var showPicker by remember { mutableStateOf(false) }
     var showSystemWarning by remember { mutableStateOf(false) }
-    var server by remember { mutableStateOf<LocalServer?>(null) }
-    var serverIp by remember { mutableStateOf<String?>(null) }
 
     val subFolders = remember(state.rootPath) {
         val root = File(state.rootPath ?: "")
@@ -108,17 +106,6 @@ fun SetupScreen(
         )
     }
 
-    val toggleServer: (Boolean) -> Unit = { checked ->
-        if (checked && state.rootPath != null) {
-            serverIp = getLocalIpAddress()
-            server = LocalServer(8080, File(state.rootPath)).also { it.start() }
-            Toast.makeText(context, "Server started at $serverIp:8080", Toast.LENGTH_LONG).show()
-        } else {
-            server?.stop()
-            server = null
-        }
-    }
-
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -149,7 +136,7 @@ fun SetupScreen(
                 if (wide) {
                     if (state.plan.scanned > 0) StorageCard(state)
                 }
-                WifiCard(state, server, serverIp, toggleServer)
+                WifiCard(state, wifiServerActive, wifiServerIp, onToggleWifiServer)
                 ExclusionsCard(state, subFolders, onAddExclusion, onRemoveExclusion)
                 CategoriesCard()
                 Spacer(Modifier.height(8.dp))
@@ -511,7 +498,7 @@ private fun CleanupCard(state: UiState, onToggle: (OptionKey) -> Unit, onToggleS
 }
 
 @Composable
-private fun WifiCard(state: UiState, server: LocalServer?, serverIp: String?, onToggleServer: (Boolean) -> Unit) {
+private fun WifiCard(state: UiState, serverActive: Boolean, serverIp: String?, onToggleServer: (Boolean) -> Unit) {
     SectionCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -532,7 +519,7 @@ private fun WifiCard(state: UiState, server: LocalServer?, serverIp: String?, on
             Column(Modifier.weight(1f)) {
                 Text("Wi-Fi Drop", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
                 Text(
-                    text = if (server != null) "http://$serverIp:8080" else "Upload from a PC browser",
+                    text = if (serverActive) "http://$serverIp:8080" else "Upload from a PC browser",
                     fontSize = 10.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -541,7 +528,7 @@ private fun WifiCard(state: UiState, server: LocalServer?, serverIp: String?, on
             }
             Spacer(Modifier.width(8.dp))
             Switch(
-                checked = server != null,
+                checked = serverActive,
                 onCheckedChange = onToggleServer,
                 enabled = state.rootPath != null,
                 modifier = Modifier.scale(0.8f),

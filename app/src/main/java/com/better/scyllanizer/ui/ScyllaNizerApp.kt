@@ -1,5 +1,6 @@
 package com.better.scyllanizer.ui
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.better.scyllanizer.data.WifiDropService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,7 +33,26 @@ import kotlinx.coroutines.delay
 @Composable
 fun ScyllaNizerApp(vm: OrganizerViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
+    val wifiServerActive by WifiDropService.isRunning.collectAsState()
+    var wifiServerIp by remember { mutableStateOf<String?>(null) }
+
+    val toggleWifiServer: (Boolean) -> Unit = { enabled ->
+        if (enabled && state.rootPath != null) {
+            wifiServerIp = getLocalIpAddress()
+            val intent = Intent(context, WifiDropService::class.java).apply {
+                action = WifiDropService.ACTION_START
+                putExtra(WifiDropService.EXTRA_ROOT_PATH, state.rootPath)
+            }
+            ContextCompat.startForegroundService(context, intent)
+        } else {
+            context.startService(Intent(context, WifiDropService::class.java).apply {
+                action = WifiDropService.ACTION_STOP
+            })
+            wifiServerIp = null
+        }
+    }
 
     FileFlowTheme(mode = state.themeMode) {
         LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
@@ -66,7 +89,10 @@ fun ScyllaNizerApp(vm: OrganizerViewModel = viewModel()) {
                             onRemoveExclusion = vm::removeExclusion,
                             onToggleShred = vm::toggleShred,
                             onUndo = vm::undo,
-                            onToggleTheme = vm::toggleTheme
+                            onToggleTheme = vm::toggleTheme,
+                            wifiServerActive = wifiServerActive,
+                            wifiServerIp = wifiServerIp,
+                            onToggleWifiServer = toggleWifiServer
                         )
                     } else {
                         ExplorerScreen()
