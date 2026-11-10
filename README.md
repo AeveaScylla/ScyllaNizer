@@ -27,27 +27,29 @@ Built with **Kotlin** and **Jetpack Compose**, ScyllaNizer features a gorgeous "
 
 ## 📱 Screenshots
 
-| Organizer | Explorer |
+| Screenshot 1 | Screenshot 2 |
 | --- | --- |
 | ![ScyllaNizer organizer screen](Screenshot_20261108-123826.png) | ![ScyllaNizer explorer screen](Screenshot_20261108-123903.png) |
 
+| Screenshot 3 | Screenshot 4 |
+| --- | --- |
+| ![ScyllaNizer screenshot](Screenshot_20261108-164442.png) | ![ScyllaNizer screenshot](Screenshot_20261108-165232.png) |
+
 ## 🤔 How does ScyllaNizer compare?
 
-ScyllaNizer is not the only project of its kind, but its exact combination of glossy aesthetics, a built-in PC drag-and-drop server, and dry-run previews makes it quite unique. Several other open-source alternatives exist, but none combine the same mix of utility and polish.
+ScyllaNizer is not the only project of its kind, but its combination of glossy aesthetics, a built-in PC drag-and-drop server, and dry-run previews makes it distinctive.
 
 ### Direct Open-Source Alternatives
-*   **FilePipe:** Perhaps the closest direct open-source competitor. It is built specifically around automated sorting using smart rules. You can set it to automatically move, copy, or sort media files, all while preserving a sense of control.
-*   **AnExplorer:** An open-source file explorer that features automatic sorting across various device types (phones, tablets, and Android TVs).
-*   **Pile:** A privacy-first, offline FOSS application designed specifically to organize clutter and loose documents using tags instead of rigid folder structures.
+- **FilePipe:** An open-source alternative focused on automated sorting using smart rules.
+- **AnExplorer:** An open-source file explorer with sorting features across phones, tablets, and Android TVs.
+- **Pile:** A privacy-first, offline app designed to organize clutter and documents with tags.
 
 ### Why ScyllaNizer Stands Out
-ScyllaNizer stands out because many traditional FOSS mainstays—like Amaze File Manager or Fossify—excel at traditional file workflows and privacy, but they don't automatically restructure a messy storage layout for you.
-
-ScyllaNizer bridges the gap:
-1. **No complex rules to set up** (unlike FilePipe). Just pick a folder and tap Scan.
-2. **100% Offline & Private** (no cloud AI reading your files).
-3. **The Wi-Fi Drop feature** (no other organizer has a built-in local HTTP server to receive files from a PC).
-4. **Full Dry-Run Preview & Checkboxes** so you have absolute control over what gets moved or deleted before a single file touches the disk.
+ScyllaNizer combines traditional file management with automatic organization:
+1. **No complex rules to set up**—just pick a folder and tap Scan.
+2. **100% offline and private**—no cloud AI reading your files.
+3. **Wi-Fi Drop**—receive files from a PC using the built-in local HTTP server.
+4. **Full dry-run preview and checkboxes**—review moves or deletions before they happen.
 
 ## 🛠️ Build & Install
 
