@@ -3,11 +3,7 @@ package com.better.scyllanizer.data
 import fi.iki.elonen.NanoHTTPD
 import java.io.File
 
-class LocalServer(
-    port: Int = 8080,
-    private val rootFolder: File,
-    private val initialDestination: String = ""
-) : NanoHTTPD(port) {
+class LocalServer(port: Int = 8080, private val rootFolder: File) : NanoHTTPD(port) {
 
     override fun serve(session: IHTTPSession): Response {
         return try {
@@ -134,7 +130,7 @@ class LocalServer(
             <input id="fileInput" type="file" multiple><input id="folderInput" type="file" multiple webkitdirectory directory>
             <progress id="progress" max="100" value="0" hidden></progress><div id="status" role="status"></div></section>
             </main><script>
-            const $=id=>document.getElementById(id);let destination='${jsonEscape(initialDestination)}',browsePath='';let busy=false;
+            const $=id=>document.getElementById(id);let destination='',browsePath='';let busy=false;
             function showPath(){ $('currentPath').textContent='/'+destination; }
             async function loadFolders(path){browsePath=path;const r=await fetch('/api/folders?path='+encodeURIComponent(path));if(!r.ok)throw new Error(await r.text());const data=await r.json();$('folderList').innerHTML='';if(path){const parent=path.split('/').slice(0,-1).join('/');const b=document.createElement('button');b.className='folder';b.textContent='📁 ..';b.onclick=()=>loadFolders(parent);$('folderList').append(b)}
             if(!data.folders.length){const e=document.createElement('div');e.className='muted';e.textContent='No subfolders';$('folderList').append(e)}
@@ -143,11 +139,18 @@ class LocalServer(
             $('upBtn').onclick=()=>loadFolders(browsePath.split('/').slice(0,-1).join('/'));
             $('useFolderBtn').onclick=()=>{destination=browsePath;showPath();$('folderBrowser').hidden=true};
             $('filesBtn').onclick=()=>$('fileInput').click();$('folderBtn').onclick=()=>$('folderInput').click();
-            $('fileInput').onchange=e=>uploadBatch(e.target.files,false);$('folderInput').onchange=e=>uploadBatch(e.target.files,true);
-            $('dropZone').ondragover=e=>{e.preventDefault();$('dropZone').style.borderColor='#f4f4f5'};$('dropZone').ondragleave=()=>{$('dropZone').style.borderColor='#0891b2'};
-            $('dropZone').ondrop=e=>{e.preventDefault();$('dropZone').style.borderColor='#0891b2';uploadBatch(e.dataTransfer.files,false)};
+            $('fileInput').onchange=e=>uploadBatch(Array.from(e.target.files||[]).map(file=>({file,relativePath:file.name})));$('folderInput').onchange=e=>uploadBatch(Array.from(e.target.files||[]).map(file=>({file,relativePath:file.webkitRelativePath||file.name})));
+            // Prevent the browser from navigating to a dropped file/folder anywhere on the page.
+            document.addEventListener('dragover',e=>e.preventDefault());
+            document.addEventListener('drop',e=>e.preventDefault());
+            $('dropZone').addEventListener('dragenter',e=>{e.preventDefault();$('dropZone').style.borderColor='#f4f4f5'});
+            $('dropZone').addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();$('dropZone').style.borderColor='#f4f4f5'});
+            $('dropZone').addEventListener('dragleave',e=>{$('dropZone').style.borderColor='#0891b2'});
+            function readEntry(entry,path){return new Promise((resolve,reject)=>{if(entry.isFile){entry.file(file=>resolve([{file,relativePath:path+file.name}]),reject);return}if(entry.isDirectory){const reader=entry.createReader();const all=[];const readMore=()=>reader.readEntries(async entries=>{if(!entries.length){resolve(all);return}try{for(const child of entries){all.push(...await readEntry(child,path+entry.name+'/'))}readMore()}catch(err){reject(err)}},reject);readMore();return}resolve([])})}
+            async function getDroppedFiles(dataTransfer){const items=Array.from(dataTransfer.items||[]);const entries=items.map(item=>item.webkitGetAsEntry?item.webkitGetAsEntry():null).filter(Boolean);if(entries.length){const all=[];for(const entry of entries)all.push(...await readEntry(entry,''));return all}return Array.from(dataTransfer.files||[]).map(file=>({file,relativePath:file.name}))}
+            $('dropZone').addEventListener('drop',async e=>{e.preventDefault();e.stopPropagation();$('dropZone').style.borderColor='#0891b2';try{const dropped=await getDroppedFiles(e.dataTransfer);if(!dropped.length){$('status').textContent='No files found in the dropped item. Try Choose whole folder.';return}uploadBatch(dropped)}catch(err){$('status').textContent='Could not read dropped folder: '+err.message}});
             function uploadOne(file,relative,index,total){return new Promise((resolve,reject)=>{const form=new FormData();form.append('file',file,file.name);form.append('relativePath',relative);form.append('destination',destination);const xhr=new XMLHttpRequest();xhr.open('POST','/upload');xhr.upload.onprogress=e=>{if(e.lengthComputable){const pct=Math.round(e.loaded/e.total*100);$('status').textContent='Uploading '+relative+' — '+pct+'% ('+(index+1)+'/'+total+')'}};xhr.onload=()=>xhr.status>=200&&xhr.status<300?resolve(xhr.responseText):reject(new Error(xhr.responseText||'HTTP '+xhr.status));xhr.onerror=()=>reject(new Error('Connection lost while uploading '+relative));xhr.send(form)})}
-            async function uploadBatch(fileList,isFolder){if(busy||!fileList||!fileList.length)return;busy=true;const files=Array.from(fileList);let saved=0;$('progress').hidden=false;$('progress').value=0;$('status').textContent='Preparing '+files.length+' files…';try{for(let i=0;i<files.length;i++){const rel=isFolder?(files[i].webkitRelativePath||files[i].name):files[i].name;await uploadOne(files[i],rel,i,files.length);saved++;$('progress').value=Math.round(saved/files.length*100);$('status').textContent='Saved '+saved+' / '+files.length+' files'}$('status').textContent='✅ All '+saved+' files saved to /'+destination;$('status').style.color='#4ade80'}catch(e){$('status').textContent='❌ '+e.message+' ('+saved+'/'+files.length+' saved)';$('status').style.color='#f87171'}finally{busy=false;$('fileInput').value='';$('folderInput').value='';}}
+            async function uploadBatch(items){if(busy||!items||!items.length)return;busy=true;const files=Array.from(items);let saved=0;$('progress').hidden=false;$('progress').value=0;$('status').textContent='Preparing '+files.length+' files…';try{for(let i=0;i<files.length;i++){const item=files[i];await uploadOne(item.file,item.relativePath||item.file.name,i,files.length);saved++;$('progress').value=Math.round(saved/files.length*100);$('status').textContent='Saved '+saved+' / '+files.length+' files'}$('status').textContent='✅ All '+saved+' files saved to /'+destination;$('status').style.color='#4ade80'}catch(e){$('status').textContent='❌ '+e.message+' ('+saved+'/'+files.length+' saved)';$('status').style.color='#f87171'}finally{busy=false;$('fileInput').value='';$('folderInput').value='';}}
             showPath();
             </script></body></html>
         """.trimIndent()

@@ -42,7 +42,7 @@ class WifiDropService : Service() {
                 startForegroundCompat()
                 try {
                     server?.stop()
-                    server = LocalServer(PORT, File(rootPath), initialDestination).also { it.start() }
+                    server = LocalServer(PORT, File(rootPath)).also { it.start() }
                     _isRunning.value = true
                 } catch (_: Exception) {
                     _isRunning.value = false
