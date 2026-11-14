@@ -62,7 +62,9 @@ ScyllaNizer combines traditional file management with automatic organization:
    ./gradlew assembleGithubDebug
    ```
 
-The app is built with Kotlin, Jetpack Compose, and Android Gradle Plugin. The configured minimum Android SDK is 26.\n\nFor the F-Droid build, use `./gradlew assembleFdroidRelease`. The `fdroid` flavor excludes the GitHub release checker; updates are delivered through the F-Droid client. The `github` flavor is used for GitHub/Komi APK releases.
+The app is built with Kotlin, Jetpack Compose, and Android Gradle Plugin. The configured minimum Android SDK is 26.
+
+For the F-Droid build, use `./gradlew assembleFdroidRelease`. The `fdroid` flavor excludes the GitHub release checker; updates are delivered through the F-Droid client. The `github` flavor is used for GitHub/Komi APK releases.
 
 ## License
 
