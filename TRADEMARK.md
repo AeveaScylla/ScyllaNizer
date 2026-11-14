@@ -1,11 +1,24 @@
 # ScyllaNizer Name and Branding
 
-The name ScyllaNizer, the ScyllaNizer logo, and the project's visual identity are branding belonging to AeveaScylla.
+The name ScyllaNizer, the ScyllaNizer logo, and the project's visual identity are
+branding belonging to AeveaScylla.
 
-The MIT License applies to the software and associated documentation. It does not grant permission to use the ScyllaNizer name, logo, or branding to identify another product or imply official affiliation or endorsement.
+The software is licensed under the MIT License. That license permits use,
+modification, and redistribution of the software, but does not grant general
+permission to use the ScyllaNizer name, logo, or branding to identify a
+different product or to imply official affiliation or endorsement.
 
-You may use, modify, and redistribute the software under the MIT License.
+AeveaScylla grants the F-Droid project and its mirrors, clients, and distribution
+infrastructure permission to use the ScyllaNizer name, logo, and associated
+official app artwork solely to identify, list, build, distribute, and promote
+the official ScyllaNizer application. This permission includes displaying the
+official app name and artwork in F-Droid listings and clients.
 
-Modified versions and forks must use a different product name, logo, and visual identity. They must not present themselves as the official ScyllaNizer project.
+This permission does not transfer ownership of the branding or grant a general
+trademark license for unrelated products. Modified versions and forks must not
+be presented as official ScyllaNizer releases or imply endorsement by
+AeveaScylla. Fork maintainers should use distinct names and visual identities
+to avoid user confusion.
 
-This notice does not restrict the permissions granted by the MIT License for the software itself.
+This notice concerns trademark and branding rights only. It does not add
+restrictions to the permissions granted by the MIT License for the software.
