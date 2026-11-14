@@ -1,0 +1,20 @@
+ScyllaNizer is an offline-first file organizer and file explorer for Android.
+
+ORGANIZE
+• Scan folders and sort files by type into organized categories.
+• Preview every planned move before applying changes.
+• Find duplicate files, zero-byte files and empty folders.
+• Undo the most recent sorting operation.
+• Protect important Android/data folders from accidental changes.
+
+EXPLORE
+• Browse files and folders with a clean, dual-pane layout on larger screens.
+• Copy, cut, paste, rename and delete files.
+• Extract ZIP archives and preview image thumbnails.
+
+WI-FI DROP
+• Start a local web server on your phone.
+• Transfer files between your phone and a computer on the same Wi-Fi network using a browser.
+• Works over the local network; an internet connection is not required for the transfer itself.
+
+ScyllaNizer does not require a cloud account. File organization and local transfers are performed on your device and local network.
