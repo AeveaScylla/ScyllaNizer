@@ -1,1 +1,0 @@
-Version 3.3: Wi-Fi Drop improvements and file organization refinements.
