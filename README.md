@@ -59,11 +59,11 @@ ScyllaNizer combines traditional file management with automatic organization:
    ```
 2. Open the project in Android Studio and run the `app` configuration, or build it from the project root with:
    ```bash
-   ./gradlew assembleDebug
+   ./gradlew assembleGithubDebug
    ```
 
-The app is built with Kotlin, Jetpack Compose, and Android Gradle Plugin. The configured minimum Android SDK is 26.
+The app is built with Kotlin, Jetpack Compose, and Android Gradle Plugin. The configured minimum Android SDK is 26.\n\nFor the F-Droid build, use `./gradlew assembleFdroidRelease`. The `fdroid` flavor excludes the GitHub release checker; updates are delivered through the F-Droid client. The `github` flavor is used for GitHub/Komi APK releases.
 
 ## License
 
-The project is licensed under the MIT License, with a restriction on use of the ScyllaNizer app name. See [LICENSE](LICENSE) for details.
+The source code is licensed under the MIT License; see [LICENSE](LICENSE). The ScyllaNizer name and logo are project branding and are addressed separately in [TRADEMARK.md](TRADEMARK.md).
