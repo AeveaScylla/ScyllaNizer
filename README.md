@@ -2,68 +2,62 @@
 
 **ScyllaNizer** is a sleek, powerful, and ultra-fast file organizer and explorer for Android. It scans any folder, categorizes files by extension, and safely moves them with a full dry-run preview.
 
-Built with **Kotlin** and **Jetpack Compose**, ScyllaNizer features a gorgeous "Glossy Black & Electric Cyan" UI that adapts perfectly to both phones and large tablets.
+Built with **Kotlin** and **Jetpack Compose**, ScyllaNizer features a glossy black and electric cyan interface for phones and tablets.
 
 [![Get it on Komi Store](https://img.shields.io/badge/Komi%20Store-Download-blue?style=for-the-badge&logo=android)](https://github-store.org/app?repo=AeveaScylla/ScyllaNizer)
 [![Download APK](https://img.shields.io/badge/Download-Latest%20APK-brightgreen?style=for-the-badge&logo=github)](https://github.com/AeveaScylla/ScyllaNizer/releases/latest)
 
-## ✨ Features
+## Features
 
-### 🗂️ The Organizer
-- **Full Storage Access:** Bypasses Android Scoped Storage (using `MANAGE_EXTERNAL_STORAGE`) to organize `Download`, `DCIM`, or any folder.
-- **Dry-Run Preview:** See exactly what will move, where it will go, and what will be renamed *before* a single file touches the disk.
-- **Smart Sorting:** Automatically categorizes files into Images, Videos, Audio, Documents, Archives, Apps, Fonts, Code, Design, and Others.
-- **Deep Cleanup:** Find and remove duplicate files (via MD5 hash), 0-byte files, and empty folders.
-- **System Lock:** Protects critical `Android/data` folders by default to prevent accidental breakage.
-- **Wi-Fi Drop (HTTP Server):** Turn on the built-in local web server and drag-and-drop files from your PC browser directly to your phone over your local Wi-Fi network.
-- **In-App Updates:** Automatically checks GitHub for the latest release and prompts you to download it.
-- **Persistent Undo:** Revert the last sort operation instantly.
+### Organizer
+- **Full Storage Access:** Organize files in selected shared-storage folders using Android's All files access permission.
+- **Dry-Run Preview:** Review planned moves and cleanup actions before applying them.
+- **Smart Sorting:** Categorizes files into Images, Videos, Audio, Documents, Archives, Apps, Fonts, Code, Design, and Others.
+- **Deep Cleanup:** Find duplicate files, zero-byte files, and empty folders.
+- **Wi-Fi Drop:** Receive files from a PC browser over the same local Wi-Fi network using the built-in local web server.
+- **Persistent Undo:** Revert the last sort operation.
 
-### 📁 The Explorer
-- **Dual-Pane Layout:** On tablets, browse two folders side-by-side. Copy files from the left pane and paste them into the right pane effortlessly.
-- **X-Ray View:** Every file gets a color-coded vertical bar, instantly showing you which category the Organizer will place it in.
-- **File Management:** Long-press to multi-select files to Copy, Cut, Paste, or Delete. You can also extract `.zip` files directly in the app.
-- **Image Thumbnails:** The Explorer generates instant visual previews for your images.
+### Explorer
+- **Dual-Pane Layout:** Browse two folders side-by-side on supported large screens.
+- **File Management:** Copy, cut, paste, and delete files; extract ZIP archives.
+- **Image Thumbnails:** View image previews while browsing.
 
-## 📱 Screenshots
+## Distribution builds
 
-| Screenshot 1 | Screenshot 2 |
+The project provides two release flavors:
+
+- **GitHub:** `./gradlew assembleGithubRelease` — includes the GitHub release-checking component.
+- **IzzyOnDroid:** `./gradlew assembleIzzyRelease` — excludes the in-app GitHub updater; updates are delivered by the IzzyOnDroid repository.
+
+Both flavors use the same application ID. Only install one distribution at a time, and keep the same developer release keystore for every update.
+
+Release signing is configured through a local, untracked `signing.properties` file in the project root. Never commit that file or the `signing/` directory.
+
+Example:
+
+```properties
+storeFile=signing/scyllanizer-release.jks
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyAlias=scyllanizer
+keyPassword=YOUR_KEY_PASSWORD
+```
+
+## Screenshots
+
+| Organizer | Explorer |
 | --- | --- |
 | ![ScyllaNizer organizer screen](Screenshot_20261108-123826.png) | ![ScyllaNizer explorer screen](Screenshot_20261108-123903.png) |
 
-| Screenshot 3 | Screenshot 4 |
-| --- | --- |
-| ![ScyllaNizer screenshot](Screenshot_20261108-164442.png) | ![ScyllaNizer screenshot](Screenshot_20261108-165232.png) |
+## Build
 
-## 🤔 How does ScyllaNizer compare?
+Clone the repository and open it in Android Studio, or build a debug APK:
 
-ScyllaNizer is not the only project of its kind, but its combination of glossy aesthetics, a built-in PC drag-and-drop server, and dry-run previews makes it distinctive.
+```bash
+./gradlew assembleGithubDebug
+```
 
-### Direct Open-Source Alternatives
-- **FilePipe:** An open-source alternative focused on automated sorting using smart rules.
-- **AnExplorer:** An open-source file explorer with sorting features across phones, tablets, and Android TVs.
-- **Pile:** A privacy-first, offline app designed to organize clutter and documents with tags.
-
-### Why ScyllaNizer Stands Out
-ScyllaNizer combines traditional file management with automatic organization:
-1. **No complex rules to set up**—just pick a folder and tap Scan.
-2. **100% offline and private**—no cloud AI reading your files.
-3. **Wi-Fi Drop**—receive files from a PC using the built-in local HTTP server.
-4. **Full dry-run preview and checkboxes**—review moves or deletions before they happen.
-
-## 🛠️ Build & Install
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/AeveaScylla/ScyllaNizer.git
-   ```
-2. Open the project in Android Studio and run the `app` configuration, or build it from the project root with:
-   ```bash
-   ./gradlew assembleDebug
-   ```
-
-The app is built with Kotlin, Jetpack Compose, and Android Gradle Plugin. The configured minimum Android SDK is 26.
+The app uses Kotlin, Jetpack Compose, and Android Gradle Plugin. Minimum Android SDK: 26.
 
 ## License
 
-The project is licensed under the MIT License, with a restriction on use of the ScyllaNizer app name. See [LICENSE](LICENSE) for details.
+The software is licensed under the MIT License. The ScyllaNizer name and branding are covered separately by [TRADEMARK.md](TRADEMARK.md).

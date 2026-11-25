@@ -21,7 +21,6 @@ object UpdateChecker {
 
     suspend fun checkForUpdate(context: Context): UpdateInfo? = withContext(Dispatchers.IO) {
         try {
-            // Get current installed version (e.g., "3.0")
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             val currentVersion = packageInfo.versionName ?: return@withContext null
 
@@ -35,14 +34,10 @@ object UpdateChecker {
             if (connection.responseCode == 200) {
                 val response = connection.inputStream.bufferedReader().use { it.readText() }
                 val json = JSONObject(response)
-                
-                // e.g., "v3.1"
-                val tagName = json.getString("tag_name").replace("v", "")
+                val tagName = json.getString("tag_name").removePrefix("v")
                 val body = json.optString("body", "No release notes provided.")
 
-                // If versions don't match, an update is available
                 if (tagName != currentVersion) {
-                    // Find the APK asset in the release
                     val assets = json.getJSONArray("assets")
                     var apkUrl = ""
                     for (i in 0 until assets.length()) {
@@ -52,16 +47,13 @@ object UpdateChecker {
                             break
                         }
                     }
-
-                    if (apkUrl.isNotEmpty()) {
-                        return@withContext UpdateInfo(tagName, body, apkUrl)
-                    }
+                    if (apkUrl.isNotEmpty()) return@withContext UpdateInfo(tagName, body, apkUrl)
                 }
             }
-        } catch (e: Exception) {
-            // Ignore network errors (offline, rate limits, etc.) and fail silently
+        } catch (_: Exception) {
+            // Offline devices and API failures are intentionally silent.
         }
-        return@withContext null
+        null
     }
 
     fun downloadApk(context: Context, url: String, version: String) {
@@ -69,10 +61,13 @@ object UpdateChecker {
             .setTitle("ScyllaNizer v$version Update")
             .setDescription("Downloading latest version...")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "ScyllaNizer_v$version.apk")
+            .setDestinationInExternalPublicDir(
+                Environment.DIRECTORY_DOWNLOADS,
+                "ScyllaNizer_v$version.apk"
+            )
             .setMimeType("application/vnd.android.package-archive")
 
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        downloadManager.enqueue(request)
+        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        manager.enqueue(request)
     }
 }

@@ -1,0 +1,6 @@
+ScyllaNizer 3.3
+
+- File organizer and explorer.
+- Dry-run preview before file operations.
+- Wi-Fi Drop for local network transfers.
+- Cleanup tools and persistent undo.

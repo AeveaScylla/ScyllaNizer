@@ -1,7 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+val signingProperties = Properties()
+val signingFile = rootProject.file("signing.properties")
+if (signingFile.exists()) {
+    signingFile.inputStream().use { signingProperties.load(it) }
 }
 
 android {
@@ -16,6 +24,26 @@ android {
         versionName = "3.3"
     }
 
+    flavorDimensions += "distribution"
+
+    productFlavors {
+        create("github") {
+            dimension = "distribution"
+        }
+        create("izzy") {
+            dimension = "distribution"
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = signingProperties.getProperty("storeFile")?.let { rootProject.file(it) }
+            storePassword = signingProperties.getProperty("storePassword")
+            keyAlias = signingProperties.getProperty("keyAlias")
+            keyPassword = signingProperties.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -26,7 +54,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             isDebuggable = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

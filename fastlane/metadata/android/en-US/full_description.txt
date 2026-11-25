@@ -1,0 +1,27 @@
+ScyllaNizer is an Android file organizer and explorer that helps you sort and manage files in shared storage.
+
+ORGANIZE
+• Scan a selected folder and categorize files by type.
+• Sort into Images, Videos, Audio, Documents, Archives, Apps, Fonts, Code, Design, and Others.
+• Optionally create subfolders by file extension or last-modified date.
+• Preview planned file operations before applying them.
+
+CLEAN UP
+• Find duplicate files.
+• Find zero-byte files and empty folders.
+• Review cleanup actions before confirming them.
+• Use the undo feature to reverse the last organization operation.
+
+EXPLORE
+• Browse folders and manage files.
+• Copy, cut, paste, and delete files.
+• Extract ZIP archives.
+• View image thumbnails.
+
+WI-FI DROP
+Transfer files between a computer and your Android device over the same local Wi-Fi network using the built-in web server. An internet connection is not required for local transfers.
+
+PRIVACY AND PERMISSIONS
+File scanning and organization are performed on the device. The app requires Android's All files access permission to manage files in the folders you select. Wi-Fi Drop runs a local server for transfers on your network.
+
+The IzzyOnDroid build does not include an in-app APK updater. App updates are provided through the IzzyOnDroid repository.
